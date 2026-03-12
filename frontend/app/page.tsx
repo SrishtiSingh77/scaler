@@ -23,11 +23,6 @@ export default function LandingPage() {
 
   return (
     <div className="neo-shell">
-      <header className="neo-header">
-        <div className="neo-logo">Scaler Cal</div>
-        <div className="neo-tag">Book time with the right person</div>
-      </header>
-
       <main className="neo-main">
         <section
           className="neo-content-card neo-hero-grid"
@@ -119,55 +114,6 @@ export default function LandingPage() {
                 </p>
               </div>
             </div>
-          </div>
-
-          <div
-            className="neo-sidebar"
-            style={{
-              background: "#fff8d6",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-              marginTop: 24,
-            }}
-          >
-            <div>
-              <div className="neo-sidebar-title">Who can I book?</div>
-              <p style={{ fontSize: 13, marginBottom: 10 }}>
-                Pick a person and jump straight into their booking page.
-              </p>
-
-              <div style={{ display: "grid", gap: 10 }}>
-                {PEOPLE.map((person) => (
-                  <div
-                    key={person.slug}
-                    className="neo-person-card"
-                  >
-                    <div className="neo-person-name">{person.name}</div>
-                    <div className="neo-person-role">{person.role}</div>
-                    <p className="neo-person-highlight">{person.highlight}</p>
-                    <Link
-                      href={`/book/${person.slug}`}
-                      className="neo-button"
-                    >
-                      Book {person.name.split(" ")[0]}
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <p
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                marginTop: 12,
-              }}
-            >
-              Built as a Cal.com-style assignment: event types, availability,
-              public booking, and a clean bookings dashboard for the default
-              admin.
-            </p>
           </div>
         </section>
       </main>
