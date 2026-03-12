@@ -47,3 +47,36 @@ export async function apiPut<T>(path: string, body: unknown): Promise<T> {
   return res.json();
 }
 
+export async function apiDelete(path: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method: "DELETE",
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(
+      `DELETE ${path} failed with status ${res.status}: ${text || res.statusText}`,
+    );
+  }
+}
+
+export async function apiPostVoid(path: string, body?: unknown): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method: "POST",
+    headers: body
+      ? {
+          "Content-Type": "application/json",
+        }
+      : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(
+      `POST ${path} failed with status ${res.status}: ${text || res.statusText}`,
+    );
+  }
+}
+
+

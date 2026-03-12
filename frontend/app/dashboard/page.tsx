@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { apiGet, apiPost } from "../api-client";
+import { apiDelete, apiGet, apiPost, apiPostVoid, apiPut } from "../api-client";
 
 type EventType = {
   id: string;
@@ -24,9 +24,9 @@ type Booking = {
 };
 
 export default function DashboardPage() {
-  const [activeTab, setActiveTab] = useState<"event-types" | "bookings">(
-    "event-types",
-  );
+  const [activeTab, setActiveTab] = useState<
+    "event-types" | "availability" | "bookings"
+  >("event-types");
   const [eventTypes, setEventTypes] = useState<EventType[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(false);
@@ -39,6 +39,25 @@ export default function DashboardPage() {
   const [bookerName, setBookerName] = useState("");
   const [bookerEmail, setBookerEmail] = useState("");
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const [schedules, setSchedules] = useState<
+    { id: string; name: string; timezone: string }[]
+  >([]);
+
+  const [newEvent, setNewEvent] = useState({
+    title: "",
+    description: "",
+    durationMinutes: 30,
+    slug: "",
+    scheduleId: "",
+  });
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  const [newSchedule, setNewSchedule] = useState({
+    name: "Weekdays 9–5",
+    timezone: "Asia/Kolkata",
+  });
 
   async function loadEventTypes() {
     setLoading(true);
@@ -69,9 +88,24 @@ export default function DashboardPage() {
     }
   }
 
+  async function loadSchedules() {
+    try {
+      const data = await apiGet<
+        { id: string; name: string; timezone: string }[]
+      >("/api/availability/schedules");
+      setSchedules(data);
+      if (!newEvent.scheduleId && data.length > 0) {
+        setNewEvent((prev) => ({ ...prev, scheduleId: data[0].id }));
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load schedules");
+    }
+  }
+
   useEffect(() => {
     loadEventTypes();
     loadBookings();
+    loadSchedules();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -138,6 +172,15 @@ export default function DashboardPage() {
           <button
             type="button"
             className={`neo-sidebar-link ${
+              activeTab === "availability" ? "active" : ""
+            }`}
+            onClick={() => setActiveTab("availability")}
+          >
+            Availability
+          </button>
+          <button
+            type="button"
+            className={`neo-sidebar-link ${
               activeTab === "bookings" ? "active" : ""
             }`}
             onClick={() => setActiveTab("bookings")}
@@ -149,126 +192,300 @@ export default function DashboardPage() {
         <section className="neo-content-card">
           {activeTab === "event-types" ? (
             <>
-              <h1 className="neo-section-title">Event Types & Public Booking</h1>
+              <h1 className="neo-section-title">Event types</h1>
               <p className="neo-section-subtitle">
-                Pick an event type, preview slots, and simulate a booking.
+                Create, edit, or remove event types for the default owner.
               </p>
-
               <div className="neo-field">
-                <label className="neo-label" htmlFor="eventType">
-                  Event type
+                <label className="neo-label" htmlFor="et-title">
+                  Title
+                </label>
+                <input
+                  id="et-title"
+                  className="neo-input"
+                  value={newEvent.title}
+                  onChange={(e) =>
+                    setNewEvent((prev) => ({ ...prev, title: e.target.value }))
+                  }
+                />
+              </div>
+              <div className="neo-field">
+                <label className="neo-label" htmlFor="et-desc">
+                  Description
+                </label>
+                <input
+                  id="et-desc"
+                  className="neo-input"
+                  value={newEvent.description}
+                  onChange={(e) =>
+                    setNewEvent((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div className="neo-field">
+                <label className="neo-label" htmlFor="et-duration">
+                  Duration (minutes)
+                </label>
+                <input
+                  id="et-duration"
+                  type="number"
+                  min={5}
+                  className="neo-input"
+                  value={newEvent.durationMinutes}
+                  onChange={(e) =>
+                    setNewEvent((prev) => ({
+                      ...prev,
+                      durationMinutes: Number(e.target.value),
+                    }))
+                  }
+                />
+              </div>
+              <div className="neo-field">
+                <label className="neo-label" htmlFor="et-slug">
+                  URL slug
+                </label>
+                <input
+                  id="et-slug"
+                  className="neo-input"
+                  value={newEvent.slug}
+                  onChange={(e) =>
+                    setNewEvent((prev) => ({ ...prev, slug: e.target.value }))
+                  }
+                />
+              </div>
+              <div className="neo-field">
+                <label className="neo-label" htmlFor="et-schedule">
+                  Availability schedule
                 </label>
                 <select
-                  id="eventType"
+                  id="et-schedule"
                   className="neo-input"
-                  value={selectedEvent?.id ?? ""}
-                  onChange={(e) => {
-                    const next = eventTypes.find(
-                      (ev) => ev.id === e.target.value,
-                    );
-                    setSelectedEvent(next ?? null);
-                    setSlots([]);
-                    setSelectedSlot(null);
-                  }}
+                  value={newEvent.scheduleId}
+                  onChange={(e) =>
+                    setNewEvent((prev) => ({
+                      ...prev,
+                      scheduleId: e.target.value,
+                    }))
+                  }
                 >
-                  {eventTypes.map((ev) => (
-                    <option key={ev.id} value={ev.id}>
-                      {ev.title} ({ev.durationMinutes}m)
+                  <option value="">Select schedule…</option>
+                  {schedules.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} ({s.timezone})
                     </option>
                   ))}
                 </select>
               </div>
-
-              <div className="neo-field">
-                <label className="neo-label" htmlFor="date">
-                  Date (YYYY-MM-DD)
-                </label>
-                <input
-                  id="date"
-                  type="date"
-                  className="neo-input"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                />
-              </div>
-
               <button
                 type="button"
                 className="neo-button"
-                onClick={handleLoadSlots}
-                disabled={loading}
+                disabled={loading || !newEvent.title || !newEvent.slug}
+                onClick={async () => {
+                  setLoading(true);
+                  setError(null);
+                  setSuccessMessage(null);
+                  try {
+                    if (editingId) {
+                      await apiPut(`/api/event-types/${editingId}`, newEvent);
+                      setEditingId(null);
+                    } else {
+                      await apiPost("/api/event-types", newEvent);
+                    }
+                    setNewEvent((prev) => ({
+                      ...prev,
+                      title: "",
+                      description: "",
+                      slug: "",
+                    }));
+                    await loadEventTypes();
+                  } catch (e) {
+                    setError(
+                      e instanceof Error
+                        ? e.message
+                        : "Failed to save event type",
+                    );
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
               >
-                {loading ? "Loading..." : "Load available slots"}
+                {editingId ? "Update event type" : "Create event type"}
               </button>
 
-              {slots.length > 0 && (
-                <div style={{ marginTop: 16 }}>
-                  <div className="neo-section-subtitle">Available slots</div>
-                  <div className="neo-slot-grid">
-                    {slots.map((slot) => {
-                      const time = new Date(slot).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      });
-                      return (
-                        <button
-                          type="button"
-                          key={slot}
-                          className={`neo-slot-button ${
-                            selectedSlot === slot ? "selected" : ""
-                          }`}
-                          onClick={() => setSelectedSlot(slot)}
-                        >
-                          {time}
-                        </button>
-                      );
-                    })}
+              <div className="neo-list">
+                {eventTypes.map((ev) => (
+                  <div key={ev.id} className="neo-list-item">
+                    <div>
+                      <div style={{ fontWeight: 700 }}>{ev.title}</div>
+                      <div style={{ fontSize: 12 }}>{ev.description}</div>
+                      <div style={{ fontSize: 11 }}>
+                        {ev.durationMinutes} min · /book/{ev.slug}
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        type="button"
+                        className="neo-button"
+                        onClick={() => {
+                          setEditingId(ev.id);
+                          setNewEvent({
+                            title: ev.title,
+                            description: ev.description,
+                            durationMinutes: ev.durationMinutes,
+                            slug: ev.slug,
+                            scheduleId: newEvent.scheduleId,
+                          });
+                        }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="neo-button red"
+                        onClick={async () => {
+                          setLoading(true);
+                          setError(null);
+                          setSuccessMessage(null);
+                          try {
+                            await apiDelete(`/api/event-types/${ev.id}`);
+                            await loadEventTypes();
+                          } catch (e) {
+                            setError(
+                              e instanceof Error
+                                ? e.message
+                                : "Failed to delete event type",
+                            );
+                          } finally {
+                            setLoading(false);
+                          }
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
-                </div>
-              )}
+                ))}
+              </div>
+            </>
+          ) : activeTab === "availability" ? (
+            <>
+              <h1 className="neo-section-title">Availability</h1>
+              <p className="neo-section-subtitle">
+                Define when the default owner can be booked.
+              </p>
 
-              {selectedSlot && (
-                <div style={{ marginTop: 16 }}>
-                  <div className="neo-section-subtitle">Book this slot</div>
-                  <div className="neo-field">
-                    <label className="neo-label" htmlFor="bookerName">
-                      Name
-                    </label>
-                    <input
-                      id="bookerName"
-                      className="neo-input"
-                      value={bookerName}
-                      onChange={(e) => setBookerName(e.target.value)}
-                    />
+              <div className="neo-field">
+                <label className="neo-label" htmlFor="sch-name">
+                  Schedule name
+                </label>
+                <input
+                  id="sch-name"
+                  className="neo-input"
+                  value={newSchedule.name}
+                  onChange={(e) =>
+                    setNewSchedule((prev) => ({ ...prev, name: e.target.value }))
+                  }
+                />
+              </div>
+              <div className="neo-field">
+                <label className="neo-label" htmlFor="sch-tz">
+                  Timezone (IANA)
+                </label>
+                <input
+                  id="sch-tz"
+                  className="neo-input"
+                  value={newSchedule.timezone}
+                  onChange={(e) =>
+                    setNewSchedule((prev) => ({
+                      ...prev,
+                      timezone: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <p style={{ fontSize: 12, marginBottom: 8 }}>
+                This quick editor creates a Monday–Friday 09:00–17:00 schedule
+                in the selected timezone.
+              </p>
+              <button
+                type="button"
+                className="neo-button"
+                disabled={loading || !newSchedule.name || !newSchedule.timezone}
+                onClick={async () => {
+                  setLoading(true);
+                  setError(null);
+                  setSuccessMessage(null);
+                  try {
+                    const rules = [1, 2, 3, 4, 5].map((day) => ({
+                      dayOfWeek: day,
+                      startTimeMinutes: 9 * 60,
+                      endTimeMinutes: 17 * 60,
+                    }));
+                    await apiPost("/api/availability/schedules", {
+                      name: newSchedule.name,
+                      timezone: newSchedule.timezone,
+                      rules,
+                    });
+                    await loadSchedules();
+                    setSuccessMessage("Schedule created");
+                  } catch (e) {
+                    setError(
+                      e instanceof Error
+                        ? e.message
+                        : "Failed to create schedule",
+                    );
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+              >
+                Create schedule
+              </button>
+
+              <div className="neo-list">
+                {schedules.map((s) => (
+                  <div key={s.id} className="neo-list-item">
+                    <div>
+                      <div style={{ fontWeight: 700 }}>{s.name}</div>
+                      <div style={{ fontSize: 12 }}>{s.timezone}</div>
+                    </div>
+                    <button
+                      type="button"
+                      className="neo-button red"
+                      onClick={async () => {
+                        setLoading(true);
+                        setError(null);
+                        setSuccessMessage(null);
+                        try {
+                          await apiDelete(
+                            `/api/availability/schedules/${s.id}`,
+                          );
+                          await loadSchedules();
+                        } catch (e) {
+                          setError(
+                            e instanceof Error
+                              ? e.message
+                              : "Failed to delete schedule",
+                          );
+                        } finally {
+                          setLoading(false);
+                        }
+                      }}
+                    >
+                      Delete
+                    </button>
                   </div>
-                  <div className="neo-field">
-                    <label className="neo-label" htmlFor="bookerEmail">
-                      Email
-                    </label>
-                    <input
-                      id="bookerEmail"
-                      className="neo-input"
-                      type="email"
-                      value={bookerEmail}
-                      onChange={(e) => setBookerEmail(e.target.value)}
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    className="neo-button"
-                    onClick={handleBook}
-                    disabled={loading}
-                  >
-                    {loading ? "Booking..." : "Confirm booking"}
-                  </button>
-                </div>
-              )}
+                ))}
+              </div>
             </>
           ) : (
             <>
-              <h1 className="neo-section-title">Upcoming bookings</h1>
+              <h1 className="neo-section-title">Bookings</h1>
               <p className="neo-section-subtitle">
-                Preview upcoming meetings for the default owner.
+                Preview and manage bookings for the default owner.
               </p>
               <div className="neo-list">
                 {bookings.map((bk) => (
@@ -284,7 +501,31 @@ export default function DashboardPage() {
                         {bk.bookerName} · {bk.bookerEmail}
                       </div>
                     </div>
-                    <div className="neo-pill">{bk.status}</div>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <div className="neo-pill">{bk.status}</div>
+                      {bk.status !== "CANCELLED" && (
+                        <button
+                          type="button"
+                          className="neo-button red"
+                          onClick={async () => {
+                            try {
+                              await apiPostVoid(
+                                `/api/bookings/${bk.id}/cancel`,
+                              );
+                              await loadBookings();
+                            } catch (e) {
+                              setError(
+                                e instanceof Error
+                                  ? e.message
+                                  : "Failed to cancel booking",
+                              );
+                            }
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
                 {bookings.length === 0 && (
