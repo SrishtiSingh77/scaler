@@ -23,7 +23,7 @@ export default function EventsPage() {
       setLoading(true);
       setError(null);
       try {
-        const data = await apiGet<EventType[]>("/api/event-types");
+        const data = await apiGet<EventType[]>("/api/event-types/events");
         setEvents(data);
       } catch (e) {
         setError(
