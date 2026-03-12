@@ -84,9 +84,10 @@ Visit `http://localhost:3000` to use the app. The frontend talks to the backend 
 
 ### Project structure
 
-- `backend/` – Express API, Prisma schema, migrations and seed script
-- `frontend/` – Next.js app (landing page, people page, dashboard, booking flows)
-- `scaler.txt` – Original assignment description and requirements
+- `backend/` – Express API, Prisma schema, migrations and seed script  
+  For more backend details, see [`backend/README.md`](backend/README.md).
+- `frontend/` – Next.js app (landing page, people page, dashboard, booking flows)  
+  For more frontend details, see [`frontend/README.md`](frontend/README.md).
 
 ### Assumptions
 

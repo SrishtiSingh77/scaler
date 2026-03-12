@@ -34,6 +34,8 @@ Server will start on `http://localhost:4000`.
 
 - **Event types (admin, default owner)**
   - `GET /api/event-types`
+  - `GET /api/event-types/people` – list “person” event types
+  - `GET /api/event-types/events` – list non‑person event types
   - `GET /api/event-types/:id`
   - `POST /api/event-types`
   - `PUT /api/event-types/:id`
@@ -55,6 +57,33 @@ Server will start on `http://localhost:4000`.
   - `GET /api/bookings?scope=upcoming|past|all`
   - `POST /api/bookings/:id/cancel`
 
+### Seeded sample data
+
+Running `npx prisma db seed` creates:
+
+- **Default owner user**
+  - `name`: `Default Owner`
+  - `email`: `owner@example.com`
+- **Default availability schedule**
+  - `id`: `default-schedule`
+  - `name`: `Weekdays 9-5`
+  - `timezone`: `Asia/Kolkata`
+  - Rules: Monday–Friday, 09:00–17:00
+- **Event types**
+  - `intro-call-30`
+    - Title: `Intro Call (30 min)`
+    - Description: `A short introduction meeting.`
+    - Duration: `30` minutes
+    - Attached to `default-schedule`
+  - `deep-dive-60`
+    - Title: `Deep Dive (60 min)`
+    - Description: `A longer deep-dive session.`
+    - Duration: `60` minutes
+    - Attached to `default-schedule`
+- **Bookings**
+  - One **past** confirmed booking for `intro-call-30`
+  - One **upcoming** confirmed booking for `intro-call-30`
+
 ### Postman/raw JSON examples
 
 - **Create availability schedule** – `POST /api/availability/schedules`
@@ -69,6 +98,22 @@ Server will start on `http://localhost:4000`.
     { "dayOfWeek": 3, "startTimeMinutes": 540, "endTimeMinutes": 1020 },
     { "dayOfWeek": 4, "startTimeMinutes": 540, "endTimeMinutes": 1020 },
     { "dayOfWeek": 5, "startTimeMinutes": 540, "endTimeMinutes": 1020 }
+  ]
+}
+```
+
+- **Update availability schedule** – `PUT /api/availability/schedules/:id`
+
+```json
+{
+  "name": "Updated Weekdays 10-6",
+  "timezone": "Asia/Kolkata",
+  "rules": [
+    { "dayOfWeek": 1, "startTimeMinutes": 600, "endTimeMinutes": 1080 },
+    { "dayOfWeek": 2, "startTimeMinutes": 600, "endTimeMinutes": 1080 },
+    { "dayOfWeek": 3, "startTimeMinutes": 600, "endTimeMinutes": 1080 },
+    { "dayOfWeek": 4, "startTimeMinutes": 600, "endTimeMinutes": 1080 },
+    { "dayOfWeek": 5, "startTimeMinutes": 600, "endTimeMinutes": 1080 }
   ]
 }
 ```

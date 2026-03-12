@@ -431,8 +431,8 @@ export default function DashboardPage() {
                 </select>
               </div>
               <p style={{ fontSize: 12, marginBottom: 8 }}>
-                This quick editor creates a Monday–Friday 09:00–17:00 schedule
-                in the selected timezone.
+                This quick editor creates a schedule with Monday–Friday
+                09:00–17:00 and weekend 12:00–16:00 in the selected timezone.
               </p>
               <button
                 type="button"
@@ -443,11 +443,20 @@ export default function DashboardPage() {
                   setError(null);
                   setSuccessMessage(null);
                   try {
-                    const rules = [1, 2, 3, 4, 5].map((day) => ({
-                      dayOfWeek: day,
-                      startTimeMinutes: 9 * 60,
-                      endTimeMinutes: 17 * 60,
-                    }));
+                    const rules = [
+                      // Weekdays 09:00–17:00
+                      ...[1, 2, 3, 4, 5].map((day) => ({
+                        dayOfWeek: day,
+                        startTimeMinutes: 9 * 60,
+                        endTimeMinutes: 17 * 60,
+                      })),
+                      // Weekend 12:00–16:00 (Saturday = 6, Sunday = 0)
+                      ...[6, 0].map((day) => ({
+                        dayOfWeek: day,
+                        startTimeMinutes: 12 * 60,
+                        endTimeMinutes: 16 * 60,
+                      })),
+                    ];
                     await apiPost("/api/availability/schedules", {
                       name: newSchedule.name,
                       timezone: newSchedule.timezone,
