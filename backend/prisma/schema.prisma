@@ -14,13 +14,13 @@ enum BookingStatus {
 }
 
 model User {
-  id        String               @id @default(uuid())
-  name      String
-  email     String               @unique
+  id         String                 @id @default(uuid())
+  name       String
+  email      String                 @unique
   eventTypes EventType[]
-  schedules AvailabilitySchedule[]
-  createdAt DateTime             @default(now())
-  updatedAt DateTime             @updatedAt
+  schedules  AvailabilitySchedule[]
+  createdAt  DateTime               @default(now())
+  updatedAt  DateTime               @updatedAt
 }
 
 model EventType {
@@ -31,6 +31,7 @@ model EventType {
   description     String
   durationMinutes Int
   slug            String              @unique
+  isPerson        Boolean             @default(false)
   schedules       EventTypeSchedule[]
   bookings        Booking[]
   createdAt       DateTime            @default(now())
@@ -38,60 +39,59 @@ model EventType {
 }
 
 model AvailabilitySchedule {
-  id         String             @id @default(uuid())
+  id         String              @id @default(uuid())
   ownerId    String
-  owner      User               @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner      User                @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   name       String
   timezone   String
   rules      AvailabilityRule[]
   eventTypes EventTypeSchedule[]
   bookings   Booking[]
   overrides  DateOverride[]
-  createdAt  DateTime           @default(now())
-  updatedAt  DateTime           @updatedAt
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
 }
 
 model AvailabilityRule {
   id               String               @id @default(uuid())
   scheduleId       String
   schedule         AvailabilitySchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
-  dayOfWeek        Int                  // 0 (Sunday) - 6 (Saturday)
-  startTimeMinutes Int                  // minutes from midnight in schedule timezone
+  dayOfWeek        Int // 0 (Sunday) - 6 (Saturday)
+  startTimeMinutes Int // minutes from midnight in schedule timezone
   endTimeMinutes   Int
 }
 
 model EventTypeSchedule {
-  id          String              @id @default(uuid())
+  id          String               @id @default(uuid())
   eventTypeId String
   scheduleId  String
-  eventType   EventType           @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
+  eventType   EventType            @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
   schedule    AvailabilitySchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
 
   @@unique([eventTypeId, scheduleId])
 }
 
 model Booking {
-  id          String              @id @default(uuid())
+  id          String               @id @default(uuid())
   eventTypeId String
   scheduleId  String
-  eventType   EventType           @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
+  eventType   EventType            @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
   schedule    AvailabilitySchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
   bookerName  String
   bookerEmail String
   startTime   DateTime
   endTime     DateTime
-  status      BookingStatus       @default(CONFIRMED)
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
+  status      BookingStatus        @default(CONFIRMED)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
 }
 
 model DateOverride {
   id               String               @id @default(uuid())
   scheduleId       String
   schedule         AvailabilitySchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
-  date             DateTime             // treated as date (UTC midnight)
+  date             DateTime // treated as date (UTC midnight)
   isBlocked        Boolean              @default(false)
   startTimeMinutes Int?
   endTimeMinutes   Int?
 }
-
