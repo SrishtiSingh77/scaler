@@ -2,6 +2,7 @@
 
 [![Watch Demo](https://img.youtube.com/vi/KBEuhWC705g/maxresdefault.jpg)](https://www.youtube.com/watch?v=KBEuhWC705g)
 
+
 This is a full‑stack scheduling/booking application inspired by Cal.com.  
 It lets a default “owner” define availability and event types, and exposes a public booking flow for visitors.
 
