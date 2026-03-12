@@ -38,11 +38,6 @@ export default function EventsPage() {
 
   return (
     <div className="neo-shell">
-      <header className="neo-header">
-        <div className="neo-logo">Scaler Cal</div>
-        <div className="neo-tag">All event types</div>
-      </header>
-
       <main className="neo-main">
         <section
           className="neo-content-card"

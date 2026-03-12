@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { apiDelete, apiGet, apiPost, apiPostVoid, apiPut } from "../api-client";
+import { useToast } from "../ToastProvider";
 
 type EventType = {
   id: string;
@@ -59,6 +60,8 @@ export default function DashboardPage() {
     timezone: "Asia/Kolkata",
   });
 
+  const { showToast } = useToast();
+
   async function loadEventTypes() {
     setLoading(true);
     setError(null);
@@ -69,7 +72,10 @@ export default function DashboardPage() {
         setSelectedEvent(data[0]);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load event types");
+      const msg =
+        e instanceof Error ? e.message : "Failed to load event types";
+      setError(msg);
+      showToast(msg, "error");
     } finally {
       setLoading(false);
     }
@@ -82,7 +88,10 @@ export default function DashboardPage() {
       const data = await apiGet<Booking[]>("/api/bookings?scope=upcoming");
       setBookings(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load bookings");
+      const msg =
+        e instanceof Error ? e.message : "Failed to load bookings";
+      setError(msg);
+      showToast(msg, "error");
     } finally {
       setLoading(false);
     }
@@ -98,7 +107,10 @@ export default function DashboardPage() {
         setNewEvent((prev) => ({ ...prev, scheduleId: data[0].id }));
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load schedules");
+      const msg =
+        e instanceof Error ? e.message : "Failed to load schedules";
+      setError(msg);
+      showToast(msg, "error");
     }
   }
 
@@ -121,7 +133,9 @@ export default function DashboardPage() {
       setSlots(res.slots);
       setSelectedSlot(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load slots");
+      const msg = e instanceof Error ? e.message : "Failed to load slots";
+      setError(msg);
+      showToast(msg, "error");
     } finally {
       setLoading(false);
     }
@@ -144,7 +158,10 @@ export default function DashboardPage() {
       setSelectedSlot(null);
       await loadBookings();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to create booking");
+      const msg =
+        e instanceof Error ? e.message : "Failed to create booking";
+      setError(msg);
+      showToast(msg, "error");
     } finally {
       setLoading(false);
     }
@@ -152,11 +169,6 @@ export default function DashboardPage() {
 
   return (
     <div className="neo-shell">
-      <header className="neo-header">
-        <div className="neo-logo">Scaler Cal</div>
-        <div className="neo-tag">Light Neo-Brutalism · Admin View</div>
-      </header>
-
       <main className="neo-main">
         <aside className="neo-sidebar">
           <div className="neo-sidebar-title">Dashboard</div>
@@ -293,6 +305,7 @@ export default function DashboardPage() {
                       setEditingId(null);
                     } else {
                       await apiPost("/api/event-types", newEvent);
+                      showToast("Event successfully created", "success");
                     }
                     setNewEvent((prev) => ({
                       ...prev,
@@ -302,11 +315,12 @@ export default function DashboardPage() {
                     }));
                     await loadEventTypes();
                   } catch (e) {
-                    setError(
+                    const msg =
                       e instanceof Error
                         ? e.message
-                        : "Failed to save event type",
-                    );
+                        : "Failed to save event type";
+                    setError(msg);
+                    showToast(msg, "error");
                   } finally {
                     setLoading(false);
                   }
@@ -353,11 +367,12 @@ export default function DashboardPage() {
                             await apiDelete(`/api/event-types/${ev.id}`);
                             await loadEventTypes();
                           } catch (e) {
-                            setError(
+                            const msg =
                               e instanceof Error
                                 ? e.message
-                                : "Failed to delete event type",
-                            );
+                                : "Failed to delete event type";
+                            setError(msg);
+                            showToast(msg, "error");
                           } finally {
                             setLoading(false);
                           }
@@ -392,9 +407,9 @@ export default function DashboardPage() {
               </div>
               <div className="neo-field">
                 <label className="neo-label" htmlFor="sch-tz">
-                  Timezone (IANA)
+                  Timezone
                 </label>
-                <input
+                <select
                   id="sch-tz"
                   className="neo-input"
                   value={newSchedule.timezone}
@@ -404,7 +419,16 @@ export default function DashboardPage() {
                       timezone: e.target.value,
                     }))
                   }
-                />
+                >
+                  <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
+                  <option value="UTC">UTC</option>
+                  <option value="America/New_York">
+                    America/New_York (ET)
+                  </option>
+                  <option value="Europe/London">Europe/London (UK)</option>
+                  <option value="Europe/Berlin">Europe/Berlin (CET)</option>
+                  <option value="Asia/Singapore">Asia/Singapore</option>
+                </select>
               </div>
               <p style={{ fontSize: 12, marginBottom: 8 }}>
                 This quick editor creates a Monday–Friday 09:00–17:00 schedule
@@ -432,11 +456,12 @@ export default function DashboardPage() {
                     await loadSchedules();
                     setSuccessMessage("Schedule created");
                   } catch (e) {
-                    setError(
+                    const msg =
                       e instanceof Error
                         ? e.message
-                        : "Failed to create schedule",
-                    );
+                        : "Failed to create schedule";
+                    setError(msg);
+                    showToast(msg, "error");
                   } finally {
                     setLoading(false);
                   }
@@ -465,11 +490,12 @@ export default function DashboardPage() {
                           );
                           await loadSchedules();
                         } catch (e) {
-                          setError(
+                          const msg =
                             e instanceof Error
                               ? e.message
-                              : "Failed to delete schedule",
-                          );
+                              : "Failed to delete schedule";
+                          setError(msg);
+                          showToast(msg, "error");
                         } finally {
                           setLoading(false);
                         }
@@ -514,11 +540,12 @@ export default function DashboardPage() {
                               );
                               await loadBookings();
                             } catch (e) {
-                              setError(
+                              const msg =
                                 e instanceof Error
                                   ? e.message
-                                  : "Failed to cancel booking",
-                              );
+                                  : "Failed to cancel booking";
+                              setError(msg);
+                              showToast(msg, "error");
                             }
                           }}
                         >
@@ -537,7 +564,6 @@ export default function DashboardPage() {
             </>
           )}
 
-          {error && <div className="neo-error">{error}</div>}
           {successMessage && <div className="neo-success">{successMessage}</div>}
         </section>
       </main>
