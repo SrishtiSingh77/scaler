@@ -38,6 +38,11 @@ export default function EventsPage() {
 
   return (
     <div className="neo-shell">
+      {/* <header className="neo-header">
+        <div className="neo-logo">Scaler Cal</div>
+        <div className="neo-tag">All event types</div>
+      </header> */}
+
       <main className="neo-main">
         <section
           className="neo-content-card"
@@ -52,14 +57,7 @@ export default function EventsPage() {
           {loading && <p>Loading events…</p>}
           {error && <div className="neo-error">{error}</div>}
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(4, 1fr)",
-              gap: 16,
-              marginTop: 16,
-            }}
-          >
+          <div className="neo-events-grid">
             {events.map((ev) => (
               <div key={ev.id} className="neo-person-card">
                 <div className="neo-person-name">{ev.title}</div>
@@ -74,8 +72,18 @@ export default function EventsPage() {
                     {ev.slug}
                   </span>
                 </p>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <Link href={`/book/${ev.slug}`} className="neo-button">
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 8,
+                  }}
+                >
+                  <Link
+                    href={`/book/${ev.slug}`}
+                    className="neo-button"
+                    style={{ flex: 1, textAlign: "center", minWidth: 140 }}
+                  >
                     Open booking page
                   </Link>
                   <button
@@ -110,4 +118,3 @@ export default function EventsPage() {
     </div>
   );
 }
-

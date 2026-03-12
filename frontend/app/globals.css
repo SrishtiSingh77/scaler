@@ -260,11 +260,11 @@ body {
 
 .neo-success {
   margin-top: 8px;
-  padding: 10px 14px;
-  border: var(--border-thick) solid #1b5e20;
-  background: #b9ff7a;
-  font-size: 14px;
-  font-weight: 800;
+  padding: 8px 10px;
+  border: var(--border-thick) solid var(--fg);
+  background: #e8ffb5;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .neo-hero-grid {
@@ -426,6 +426,25 @@ body {
   line-height: 1.5;
 }
 
+.neo-events-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+@media (max-width: 1024px) {
+  .neo-events-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .neo-events-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 768px) {
   .neo-main {
     grid-template-columns: 1fr;
@@ -439,4 +458,3 @@ body {
     grid-template-columns: 1fr;
   }
 }
-
