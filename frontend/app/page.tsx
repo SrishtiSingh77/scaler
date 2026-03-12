@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 
 const PEOPLE = [
   {
@@ -40,7 +41,7 @@ export default function LandingPage() {
               <span>·</span>
               <span>Cal.com style</span>
             </div>
-            <h1 className="neo-section-title">
+            <h1 className="neo-hero-title">
               Stop emailing. Share a link. Get booked.
             </h1>
             <p className="neo-hero-sub">
@@ -49,59 +50,74 @@ export default function LandingPage() {
               handled automatically behind the scenes.
             </p>
 
-            <ol
-              style={{
-                listStyle: "none",
-                padding: 0,
-                margin: "0 0 18px 0",
-                display: "grid",
-                gap: 10,
-              }}
-            >
-              <li className="neo-sidebar">
-                <div className="neo-sidebar-title">1 · Event Types</div>
-                <p style={{ fontSize: 13 }}>
-                  Create and manage event types with title, description,
-                  duration, and a unique URL slug – all visible on a central
-                  dashboard and exposed as public booking links.
-                </p>
-              </li>
-              <li className="neo-sidebar">
-                <div className="neo-sidebar-title">2 · Availability</div>
-                <p style={{ fontSize: 13 }}>
-                  Configure which days (e.g. Monday–Friday), what hours (like
-                  9:00–17:00), and which timezone you&apos;re bookable in so
-                  your schedule is always respected.
-                </p>
-              </li>
-              <li className="neo-sidebar">
-                <div className="neo-sidebar-title">3 · Public booking page</div>
-                <p style={{ fontSize: 13 }}>
-                  Guests land on a public page, pick a date on the calendar,
-                  choose an available slot, and share their name and email –
-                  with strict protection against double booking.
-                </p>
-              </li>
-              <li className="neo-sidebar">
-                <div className="neo-sidebar-title">4 · Bookings dashboard</div>
-                <p style={{ fontSize: 13 }}>
-                  Behind the scenes, an admin dashboard tracks upcoming and past
-                  bookings and lets you cancel slots when plans change.
-                </p>
-              </li>
-            </ol>
-
             <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-              <Link
-                href={`/book/${primary.slug}`}
-                className="neo-button"
-                aria-label={`Get started by booking with ${primary.name}`}
-              >
+              <Link href="/people" className="neo-button">
                 Get started
               </Link>
               <span style={{ fontSize: 12, fontWeight: 600 }}>
                 No login · book in under a minute
               </span>
+            </div>
+          </div>
+
+          <div className="neo-hero-visual">
+            <Image
+              src="/poster.png"
+              alt="Two people scheduling meetings across the world"
+              fill
+              style={{ objectFit: "contain" }}
+              priority
+            />
+            <div className="neo-hero-chip">Available worldwide</div>
+          </div>
+        </section>
+      </main>
+
+      <main className="neo-main" style={{ paddingTop: 0 }}>
+        <section
+          className="neo-content-card"
+          style={{ gridColumn: "1 / span 2", background: "#fffdf5" }}
+        >
+          <div>
+            <div className="neo-section-subtitle">What this app does</div>
+            <h2 className="neo-section-title">Everything you need to get booked</h2>
+
+            <div className="neo-feature-row">
+              <div className="neo-feature-card">
+                <div className="neo-feature-icon">ET</div>
+                <div className="neo-feature-title">Event types you control</div>
+                <p className="neo-feature-copy">
+                  Design different kinds of meetings with their own title,
+                  description, duration, and clean URL slug – all managed from a
+                  single dashboard.
+                </p>
+              </div>
+              <div className="neo-feature-card">
+                <div className="neo-feature-icon">⏰</div>
+                <div className="neo-feature-title">Smart availability</div>
+                <p className="neo-feature-copy">
+                  Tell the system which days you take calls and the exact
+                  working hours in your timezone, and it does the math for
+                  every visitor.
+                </p>
+              </div>
+              <div className="neo-feature-card">
+                <div className="neo-feature-icon">🌐</div>
+                <div className="neo-feature-title">Public booking page</div>
+                <p className="neo-feature-copy">
+                  Share a single link where guests choose a date, see free
+                  slots, drop in their name and email, and book without any
+                  double‑booking surprises.
+                </p>
+              </div>
+              <div className="neo-feature-card">
+                <div className="neo-feature-icon">📅</div>
+                <div className="neo-feature-title">Bookings at a glance</div>
+                <p className="neo-feature-copy">
+                  Behind the scenes, a simple dashboard shows upcoming and past
+                  meetings and lets the owner cancel slots when plans change.
+                </p>
+              </div>
             </div>
           </div>
 
@@ -112,6 +128,7 @@ export default function LandingPage() {
               display: "flex",
               flexDirection: "column",
               justifyContent: "space-between",
+              marginTop: 24,
             }}
           >
             <div>
