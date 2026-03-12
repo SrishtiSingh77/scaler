@@ -8,11 +8,26 @@ import {
   deleteEventType,
   getEventTypeById,
   listEventTypes,
+  listNonPersonEventTypes,
+  listPersonEventTypes,
   updateEventType,
 } from "./eventTypes.service";
 
 export async function listEventTypesHandler(_req: Request, res: Response) {
   const eventTypes = await listEventTypes();
+  res.json(eventTypes);
+}
+
+export async function listPersonEventTypesHandler(_req: Request, res: Response) {
+  const eventTypes = await listPersonEventTypes();
+  res.json(eventTypes);
+}
+
+export async function listNonPersonEventTypesHandler(
+  _req: Request,
+  res: Response,
+) {
+  const eventTypes = await listNonPersonEventTypes();
   res.json(eventTypes);
 }
 

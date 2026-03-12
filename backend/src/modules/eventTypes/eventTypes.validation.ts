@@ -8,6 +8,7 @@ export const createEventTypeSchema = z.object({
     message: "Slug can contain letters, numbers and dashes only",
   }),
   scheduleId: z.string().min(1),
+  isPerson: z.boolean().optional(),
 });
 
 export const updateEventTypeSchema = createEventTypeSchema.partial();

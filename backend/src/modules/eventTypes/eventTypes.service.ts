@@ -30,6 +30,22 @@ export async function listEventTypes() {
   });
 }
 
+export async function listPersonEventTypes() {
+  const ownerId = await getDefaultOwnerId();
+  return prisma.eventType.findMany({
+    where: { ownerId, isPerson: true },
+    orderBy: { createdAt: "asc" },
+  });
+}
+
+export async function listNonPersonEventTypes() {
+  const ownerId = await getDefaultOwnerId();
+  return prisma.eventType.findMany({
+    where: { ownerId, isPerson: false },
+    orderBy: { createdAt: "asc" },
+  });
+}
+
 export async function getEventTypeById(id: string) {
   const ownerId = await getDefaultOwnerId();
   return prisma.eventType.findFirst({
@@ -66,6 +82,7 @@ export async function createEventType(data: CreateEventTypeInput) {
         description: data.description,
         durationMinutes: data.durationMinutes,
         slug: data.slug,
+        isPerson: data.isPerson ?? false,
       },
     });
 
@@ -99,6 +116,8 @@ export async function updateEventType(id: string, data: UpdateEventTypeInput) {
         description: data.description ?? existing.description,
         durationMinutes: data.durationMinutes ?? existing.durationMinutes,
         slug: data.slug ?? existing.slug,
+        isPerson:
+          typeof data.isPerson === "boolean" ? data.isPerson : existing.isPerson,
       },
     });
 
