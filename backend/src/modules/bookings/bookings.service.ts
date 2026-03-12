@@ -2,17 +2,24 @@ import { DateTime } from "luxon";
 import { prisma } from "../../prisma/client";
 
 const DEFAULT_OWNER_EMAIL = "owner@example.com";
+let defaultOwnerIdPromise: Promise<string> | null = null;
 
 async function getDefaultOwnerId() {
-  const user = await prisma.user.findUnique({
-    where: { email: DEFAULT_OWNER_EMAIL },
-  });
+  if (!defaultOwnerIdPromise) {
+    defaultOwnerIdPromise = (async () => {
+      const user = await prisma.user.findUnique({
+        where: { email: DEFAULT_OWNER_EMAIL },
+      });
 
-  if (!user) {
-    throw new Error("Default owner user not found. Did you run the seed script?");
+      if (!user) {
+        throw new Error("Default owner user not found. Did you run the seed script?");
+      }
+
+      return user.id;
+    })();
   }
 
-  return user.id;
+  return defaultOwnerIdPromise;
 }
 
 export async function listBookings(scope: "upcoming" | "past" | "all") {
