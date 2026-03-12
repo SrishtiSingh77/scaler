@@ -1,0 +1,118 @@
+## Backend (Scaler Cal)
+
+### Tech stack
+- **Runtime**: Node.js + Express
+- **Language**: TypeScript
+- **ORM**: Prisma
+- **DB**: Neon Postgres
+
+### Environment variables
+Create a `.env` file in `backend/`:
+
+```bash
+DATABASE_URL="postgresql://<user>:<password>@<host>/<database>?sslmode=require"
+PORT=4000
+```
+
+Use the **PostgreSQL connection string** from your Neon project as `DATABASE_URL`.
+
+### Setup
+```bash
+cd backend
+npm install
+npx prisma migrate dev
+npx prisma db seed
+npm run dev
+```
+
+Server will start on `http://localhost:4000`.
+
+### Core endpoints
+
+- **Health**
+  - `GET /health`
+
+- **Event types (admin, default owner)**
+  - `GET /api/event-types`
+  - `GET /api/event-types/:id`
+  - `POST /api/event-types`
+  - `PUT /api/event-types/:id`
+  - `DELETE /api/event-types/:id`
+
+- **Availability (admin)**
+  - `GET /api/availability/schedules`
+  - `GET /api/availability/schedules/:id`
+  - `POST /api/availability/schedules`
+  - `PUT /api/availability/schedules/:id`
+  - `DELETE /api/availability/schedules/:id`
+
+- **Public booking**
+  - `GET /api/public/event-types/:slug`
+  - `GET /api/public/event-types/:slug/slots?date=YYYY-MM-DD`
+  - `POST /api/public/event-types/:slug/book`
+
+- **Bookings dashboard (admin)**
+  - `GET /api/bookings?scope=upcoming|past|all`
+  - `POST /api/bookings/:id/cancel`
+
+### Postman/raw JSON examples
+
+- **Create availability schedule** – `POST /api/availability/schedules`
+
+```json
+{
+  "name": "Weekdays 9-5",
+  "timezone": "Asia/Kolkata",
+  "rules": [
+    { "dayOfWeek": 1, "startTimeMinutes": 540, "endTimeMinutes": 1020 },
+    { "dayOfWeek": 2, "startTimeMinutes": 540, "endTimeMinutes": 1020 },
+    { "dayOfWeek": 3, "startTimeMinutes": 540, "endTimeMinutes": 1020 },
+    { "dayOfWeek": 4, "startTimeMinutes": 540, "endTimeMinutes": 1020 },
+    { "dayOfWeek": 5, "startTimeMinutes": 540, "endTimeMinutes": 1020 }
+  ]
+}
+```
+
+- **Create event type** – `POST /api/event-types`
+  - Use a `scheduleId` you got from the previous call.
+
+```json
+{
+  "title": "Intro Call (30 min)",
+  "description": "Short intro meeting",
+  "durationMinutes": 30,
+  "slug": "intro-call-30",
+  "scheduleId": "<schedule-id-here>"
+}
+```
+
+- **Update event type** – `PUT /api/event-types/:id`
+
+```json
+{
+  "title": "Updated Intro Call",
+  "description": "Updated description",
+  "durationMinutes": 45,
+  "slug": "intro-call-45",
+  "scheduleId": "<schedule-id-here>"
+}
+```
+
+- **Get available slots** – `GET /api/public/event-types/intro-call-30/slots?date=2026-03-15`
+  - No body; just set query param `date`.
+
+- **Create public booking** – `POST /api/public/event-types/intro-call-30/book`
+  - `startTime` must be one of the slot ISO strings returned from the slots API.
+
+```json
+{
+  "bookerName": "Alice Example",
+  "bookerEmail": "alice@example.com",
+  "startTime": "2026-03-15T04:30:00.000Z"
+}
+```
+
+- **Cancel booking** – `POST /api/bookings/:id/cancel`
+  - No raw body required.
+
+
