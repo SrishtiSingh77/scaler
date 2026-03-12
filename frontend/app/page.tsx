@@ -49,9 +49,9 @@ export default function LandingPage() {
               <Link href="/people" className="neo-button">
                 Get started
               </Link>
-              <span style={{ fontSize: 12, fontWeight: 600 }}>
+              {/* <span style={{ fontSize: 12, fontWeight: 600 }}>
                 No login · book in under a minute
-              </span>
+              </span> */}
             </div>
           </div>
 
@@ -63,7 +63,7 @@ export default function LandingPage() {
               style={{ objectFit: "contain" }}
               priority
             />
-            <div className="neo-hero-chip">Available worldwide</div>
+            {/* <div className="neo-hero-chip">Available worldwide</div> */}
           </div>
         </section>
       </main>
