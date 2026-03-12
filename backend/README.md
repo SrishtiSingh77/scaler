@@ -1,4 +1,4 @@
-## Backend (Scaler Cal)
+## Backend (Calix)
 
 ### Tech stack
 - **Runtime**: Node.js + Express

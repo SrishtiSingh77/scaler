@@ -4,7 +4,7 @@ const API_BASE_URL =
 export async function apiGet<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, { cache: "no-store" });
   if (!res.ok) {
-    throw new Error(`GET ${path} failed with status ${res.status}`);
+    throw new Error("Something went wrong while loading data.");
   }
   return res.json();
 }
@@ -20,9 +20,20 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(
-      `POST ${path} failed with status ${res.status}: ${text || res.statusText}`,
-    );
+    let message = text || res.statusText;
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed && typeof parsed.message === "string") {
+        message = parsed.message;
+      }
+    } catch {
+      // ignore JSON parse errors
+    }
+    const lower = message.toLowerCase();
+    if (lower.includes("unique constraint") && lower.includes("slug")) {
+      message = "This slug is already in use. Please choose another one.";
+    }
+    throw new Error(message || "Request failed.");
   }
 
   return res.json();
@@ -39,9 +50,20 @@ export async function apiPut<T>(path: string, body: unknown): Promise<T> {
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(
-      `PUT ${path} failed with status ${res.status}: ${text || res.statusText}`,
-    );
+    let message = text || res.statusText;
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed && typeof parsed.message === "string") {
+        message = parsed.message;
+      }
+    } catch {
+      // ignore JSON parse errors
+    }
+    const lower = message.toLowerCase();
+    if (lower.includes("unique constraint") && lower.includes("slug")) {
+      message = "This slug is already in use. Please choose another one.";
+    }
+    throw new Error(message || "Request failed.");
   }
 
   return res.json();
@@ -54,9 +76,16 @@ export async function apiDelete(path: string): Promise<void> {
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(
-      `DELETE ${path} failed with status ${res.status}: ${text || res.statusText}`,
-    );
+    let message = text || res.statusText;
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed && typeof parsed.message === "string") {
+        message = parsed.message;
+      }
+    } catch {
+      // ignore JSON parse errors
+    }
+    throw new Error(message || "Request failed.");
   }
 }
 
@@ -73,9 +102,20 @@ export async function apiPostVoid(path: string, body?: unknown): Promise<void> {
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(
-      `POST ${path} failed with status ${res.status}: ${text || res.statusText}`,
-    );
+    let message = text || res.statusText;
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed && typeof parsed.message === "string") {
+        message = parsed.message;
+      }
+    } catch {
+      // ignore JSON parse errors
+    }
+    const lower = message.toLowerCase();
+    if (lower.includes("unique constraint") && lower.includes("slug")) {
+      message = "This slug is already in use. Please choose another one.";
+    }
+    throw new Error(message || "Request failed.");
   }
 }
 

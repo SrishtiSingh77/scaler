@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { apiGet, apiPost } from "../../api-client";
-import { Calendar } from "../../../components/Calendar";
+// import { Calendar } from "../../../components/Calendar";
+import { Calendar } from "@/components/Calendar";
 import emailjs from "@emailjs/browser";
 
 type PublicEvent = {

@@ -12,8 +12,8 @@ type Schedule = {
 export default function NewPersonPage() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     name: "",
@@ -31,10 +31,8 @@ export default function NewPersonPage() {
         if (data.length > 0) {
           setForm((prev) => ({ ...prev, scheduleId: data[0].id }));
         }
-      } catch (e) {
-        setError(
-          e instanceof Error ? e.message : "Failed to load schedules",
-        );
+      } catch {
+        // ignore schedule load errors here; booking flows will surface issues
       }
     }
     loadSchedules();
@@ -43,7 +41,6 @@ export default function NewPersonPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    setError(null);
     setSuccess(null);
     try {
       await apiPost("/api/event-types", {
@@ -62,9 +59,10 @@ export default function NewPersonPage() {
         slug: "",
       }));
     } catch (e) {
-      setError(
-        e instanceof Error ? e.message : "Failed to create person event",
-      );
+      const msg =
+        e instanceof Error ? e.message : "Failed to create person event";
+      setToast(msg);
+      setTimeout(() => setToast(null), 2500);
     } finally {
       setLoading(false);
     }
@@ -173,10 +171,21 @@ export default function NewPersonPage() {
             </button>
           </form>
 
-          {error && <div className="neo-error">{error}</div>}
           {success && <div className="neo-success">{success}</div>}
         </section>
       </main>
+      {toast && (
+        <div
+          style={{
+            position: "fixed",
+            top: 16,
+            right: 16,
+            zIndex: 50,
+          }}
+        >
+          <div className="neo-error">{toast}</div>
+        </div>
+      )}
     </div>
   );
 }
