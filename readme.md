@@ -1,6 +1,6 @@
 ## Calix – Scheduling Platform (Cal.com Style)
 
-![Watch Demo – Watch Now](https://youtu.be/v1S1P_eqNA4) 
+▶️ Watch Demo: https://youtu.be/v1S1P_eqNA4
 
 This is a full‑stack scheduling/booking application inspired by Cal.com.  
 It lets a default “owner” define availability and event types, and exposes a public booking flow for visitors.
