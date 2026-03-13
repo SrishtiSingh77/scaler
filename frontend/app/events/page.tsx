@@ -1,128 +1,8 @@
-// "use client";
-
-// import Link from "next/link";
-// import { useEffect, useState } from "react";
-// import { apiGet } from "../api-client";
-
-// type EventType = {
-//   id: string;
-//   title: string;
-//   description: string;
-//   durationMinutes: number;
-//   slug: string;
-// };
-
-// export default function EventsPage() {
-//   const [events, setEvents] = useState<EventType[]>([]);
-//   const [loading, setLoading] = useState(false);
-//   const [error, setError] = useState<string | null>(null);
-//   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
-
-//   useEffect(() => {
-//     async function load() {
-//       setLoading(true);
-//       setError(null);
-//       try {
-//         const data = await apiGet<EventType[]>("/api/event-types/events");
-//         setEvents(data);
-//       } catch (e) {
-//         setError(
-//           e instanceof Error ? e.message : "Failed to load event types",
-//         );
-//       } finally {
-//         setLoading(false);
-//       }
-//     }
-//     load();
-//   }, []);
-
-//   return (
-//     <div className="neo-shell">
-//       {/* <header className="neo-header">
-//         <div className="neo-logo">Scaler Cal</div>
-//         <div className="neo-tag">All event types</div>
-//       </header> */}
-
-//       <main className="neo-main">
-//         <section
-//           className="neo-content-card"
-//           style={{ gridColumn: "1 / span 2", background: "#fffdf5" }}
-//         >
-//           <h1 className="neo-section-title">Pick an event</h1>
-//           <p className="neo-hero-sub">
-//             Every event type has its own unique public link. Share it or click
-//             through below to open the booking page for that event.
-//           </p>
-
-//           {loading && <p>Loading events…</p>}
-//           {error && <div className="neo-error">{error}</div>}
-
-//           <div className="neo-events-grid">
-//             {events.map((ev) => (
-//               <div key={ev.id} className="neo-person-card">
-//                 <div className="neo-person-name">{ev.title}</div>
-//                 <div className="neo-person-role">
-//                   {ev.durationMinutes} minute meeting
-//                 </div>
-//                 <p className="neo-person-highlight">{ev.description}</p>
-//                 <p style={{ fontSize: 12, marginBottom: 8 }}>
-//                   Public link:{" "}
-//                   <span style={{ fontWeight: 700 }}>
-//                     /book/
-//                     {ev.slug}
-//                   </span>
-//                 </p>
-//                 <div
-//                   style={{
-//                     display: "flex",
-//                     flexWrap: "wrap",
-//                     gap: 8,
-//                   }}
-//                 >
-//                   <Link
-//                     href={`/book/${ev.slug}`}
-//                     className="neo-button"
-//                     style={{ flex: 1, textAlign: "center", minWidth: 140 }}
-//                   >
-//                     Open booking page
-//                   </Link>
-//                   <button
-//                     type="button"
-//                     className="neo-button"
-//                     onClick={async () => {
-//                       const origin =
-//                         typeof window !== "undefined"
-//                           ? window.location.origin
-//                           : "";
-//                       const url = `${origin}/book/${ev.slug}`;
-//                       try {
-//                         await navigator.clipboard.writeText(url);
-//                         setCopiedSlug(ev.slug);
-//                         setTimeout(() => setCopiedSlug(null), 1500);
-//                       } catch {
-//                         // ignore clipboard errors
-//                       }
-//                     }}
-//                   >
-//                     {copiedSlug === ev.slug ? "Copied!" : "Copy link"}
-//                   </button>
-//                 </div>
-//               </div>
-//             ))}
-//             {!loading && events.length === 0 && (
-//               <p style={{ fontWeight: 600 }}>No event types created yet.</p>
-//             )}
-//           </div>
-//         </section>
-//       </main>
-//     </div>
-//   );
-// }
 "use client";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { apiGet } from "../api-client";
+import { apiDelete, apiGet, apiPost } from "../api-client";
 
 type EventType = {
   id: string;
@@ -130,6 +10,13 @@ type EventType = {
   description: string;
   durationMinutes: number;
   slug: string;
+};
+
+type DetailedEventType = EventType & {
+  bufferBeforeMinutes?: number | null;
+  bufferAfterMinutes?: number | null;
+  isPerson?: boolean | null;
+  schedules?: { schedule: { id: string } }[];
 };
 
 function Toggle({ enabled, onChange }: { enabled: boolean; onChange: () => void }) {
@@ -164,11 +51,20 @@ function Toggle({ enabled, onChange }: { enabled: boolean; onChange: () => void 
   );
 }
 
-function IconBtn({ title, children }: { title: string; children: React.ReactNode }) {
+function IconBtn({
+  title,
+  children,
+  onClick,
+}: {
+  title: string;
+  children: React.ReactNode;
+  onClick?: () => void;
+}) {
   return (
     <button
       type="button"
       title={title}
+      onClick={onClick}
       style={{
         width: 34,
         height: 34,
@@ -195,6 +91,7 @@ export default function EventsPage() {
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
   const [enabledMap, setEnabledMap] = useState<Record<string, boolean>>({});
   const [search, setSearch] = useState("");
+  const [menuForId, setMenuForId] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -218,6 +115,63 @@ export default function EventsPage() {
   const filteredEvents = events.filter(ev =>
     ev.title.toLowerCase().includes(search.toLowerCase())
   );
+
+  async function refreshEvents() {
+    const data = await apiGet<EventType[]>("/api/event-types/events");
+    setEvents(data);
+  }
+
+  async function handleDuplicate(ev: EventType) {
+    try {
+      const detail = await apiGet<DetailedEventType>(`/api/event-types/${ev.id}`);
+      const scheduleId =
+        detail.schedules && detail.schedules[0]?.schedule?.id
+          ? detail.schedules[0].schedule.id
+          : undefined;
+      if (!scheduleId) {
+        setError("Cannot duplicate event without an availability schedule");
+        return;
+      }
+
+      const existingSlugs = new Set(events.map((e) => e.slug));
+      const baseSlug = detail.slug;
+      let newSlug = `${baseSlug}-copy`;
+      let i = 1;
+      while (existingSlugs.has(newSlug)) {
+        newSlug = `${baseSlug}-copy-${i}`;
+        i += 1;
+      }
+
+      await apiPost("/api/event-types", {
+        title: `${detail.title} (Copy)`,
+        description: detail.description,
+        durationMinutes: detail.durationMinutes,
+        bufferBeforeMinutes: detail.bufferBeforeMinutes ?? 0,
+        bufferAfterMinutes: detail.bufferAfterMinutes ?? 0,
+        slug: newSlug,
+        scheduleId,
+        isPerson: detail.isPerson ?? false,
+      });
+      await refreshEvents();
+      setMenuForId(null);
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : "Failed to duplicate event type",
+      );
+    }
+  }
+
+  async function handleDelete(ev: EventType) {
+    try {
+      await apiDelete(`/api/event-types/${ev.id}`);
+      await refreshEvents();
+      setMenuForId(null);
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : "Failed to delete event type",
+      );
+    }
+  }
 
   return (
     <div style={{
@@ -410,11 +364,69 @@ export default function EventsPage() {
                   </IconBtn>
 
                   {/* More options */}
-                  <IconBtn title="More options">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                      <circle cx="5" cy="12" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="19" cy="12" r="1.5" />
-                    </svg>
-                  </IconBtn>
+                  <div style={{ position: "relative" }}>
+                    <IconBtn
+                      title="More options"
+                      onClick={() =>
+                        setMenuForId((current) =>
+                          current === ev.id ? null : ev.id,
+                        )
+                      }
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="5" cy="12" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="19" cy="12" r="1.5" />
+                      </svg>
+                    </IconBtn>
+                    {menuForId === ev.id && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "120%",
+                          right: 0,
+                          backgroundColor: "#ffffff",
+                          borderRadius: 8,
+                          boxShadow: "0 12px 30px rgba(15,23,42,0.2)",
+                          border: "1px solid #e5e7eb",
+                          padding: "4px 0",
+                          minWidth: 140,
+                          zIndex: 10,
+                        }}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => handleDuplicate(ev)}
+                          style={{
+                            width: "100%",
+                            padding: "6px 12px",
+                            fontSize: 12.5,
+                            textAlign: "left",
+                            border: "none",
+                            background: "transparent",
+                            cursor: "pointer",
+                            color: "#111827",
+                          }}
+                        >
+                          Duplicate
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(ev)}
+                          style={{
+                            width: "100%",
+                            padding: "6px 12px",
+                            fontSize: 12.5,
+                            textAlign: "left",
+                            border: "none",
+                            background: "transparent",
+                            cursor: "pointer",
+                            color: "#b91c1c",
+                          }}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             );
