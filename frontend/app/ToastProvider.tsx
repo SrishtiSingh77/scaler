@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from "react";
 
+
 type ToastVariant = "error" | "success";
 
 type Toast = {
