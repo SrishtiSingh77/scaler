@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const availability_controller_1 = require("./availability.controller");
+const router = (0, express_1.Router)();
+router.get("/schedules", availability_controller_1.listSchedulesHandler);
+router.get("/schedules/:id", availability_controller_1.getScheduleHandler);
+router.post("/schedules", availability_controller_1.createScheduleHandler);
+router.put("/schedules/:id", availability_controller_1.updateScheduleHandler);
+router.delete("/schedules/:id", availability_controller_1.deleteScheduleHandler);
+exports.default = router;
