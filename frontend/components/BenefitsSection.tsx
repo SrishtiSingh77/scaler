@@ -85,7 +85,7 @@ export default function BenefitsSection() {
                         {/* Mockup */}
                         <div className="relative mt-2">
                             <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10 bg-gray-950 text-white text-[11px] font-bold rounded-full px-4 py-1.5 tracking-tight shadow-lg whitespace-nowrap">
-                                cal.com/bailey
+                                Calix/srishti
                             </div>
                             <div className="rounded-2xl border border-gray-100 bg-[#FAFAFA] pt-6 pb-4 px-4">
                                 <div className="flex items-center gap-2.5 mb-3">
