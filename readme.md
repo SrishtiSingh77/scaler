@@ -27,6 +27,10 @@ It lets a default “owner” define availability and event types, and exposes a
 - **Bookings dashboard**
   - View upcoming and past bookings
   - Cancel existing bookings
+ 
+### Special points
+- buffer system managed for giving breaks before and after meetings(time slots accordingly updated)
+- emailjs used for on spot email sending if booked or cancelled
 
 ### Local development – quick start
 
