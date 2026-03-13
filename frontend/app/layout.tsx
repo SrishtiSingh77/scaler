@@ -49,6 +49,9 @@ export default function RootLayout({
                 Bookings
               </Link>
             </nav>
+            <Link href="/people" className="neo-nav-cta">
+              Get started
+            </Link>
           </header>
           {children}
         </ToastProvider>

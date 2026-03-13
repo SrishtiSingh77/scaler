@@ -1,122 +1,238 @@
 "use client";
 
-import Link from "next/link";
-import Image from "next/image";
-
-const PEOPLE = [
-  {
-    name: "Rahul Mehta",
-    role: "Product walkthroughs",
-    slug: "intro-call-30",
-    highlight: "30-minute intro calls for candidates, clients, or teammates.",
-  },
-  {
-    name: "Priya Sharma",
-    role: "Deep-dive sessions",
-    slug: "deep-dive-60",
-    highlight: "60-minute strategy or architecture deep dives.",
-  },
-];
+import { useState, useEffect } from "react";
 
 export default function LandingPage() {
-  const primary = PEOPLE[0];
+  const days = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+  const availableDates = [15, 16, 20, 21, 22, 23, 27, 28, 29, 30];
+  const [selectedDate, setSelectedDate] = useState<number | null>(null);
+  const [selectedDuration, setSelectedDuration] = useState("15m");
+  const [highlightedDate, setHighlightedDate] = useState<number | null>(null);
+  const durations = ["15m", "30m", "45m", "1h"];
+  const startDayOffset = 4;
+  const totalDays = 31;
+
+  useEffect(() => {
+    let idx = 0;
+    const cycle = () => {
+      setHighlightedDate(availableDates[idx % availableDates.length]);
+      idx++;
+    };
+    cycle();
+    const interval = setInterval(cycle, 900);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <div className="neo-shell">
-      <main className="neo-main">
-        <section
-          className="neo-content-card neo-hero-grid"
-          style={{
-            gridColumn: "1 / span 2",
-          }}
-        >
-          <div>
-            <div className="neo-hero-badge">
-              <span>Scheduling Platform</span>
-              <span>·</span>
-              <span>Cal.com style</span>
+    <div
+      style={{
+        minHeight: "100vh",
+        backgroundColor: "#fff",
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      }}
+    >
+      {/* Nav */}
+
+
+      {/* Hero */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 680px",
+        gap: 0,
+        padding: "64px 80px",
+        alignItems: "center",
+        minHeight: "calc(100vh - 56px)",
+      }}>
+        {/* Left: text */}
+        <div style={{ paddingRight: 60 }}>
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 6,
+            border: "1px solid #e5e7eb", borderRadius: 100,
+            padding: "5px 12px", fontSize: 13, color: "#374151",
+            marginBottom: 32, cursor: "pointer",
+          }}>
+            Calix launches v6.2
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
+          </div>
+
+          <h1 style={{
+            fontSize: "clamp(42px, 5vw, 64px)",
+            fontWeight: 800,
+            lineHeight: 1.08,
+            color: "#0a0a0a",
+            marginBottom: 24,
+            letterSpacing: "-0.03em",
+          }}>
+            The better way to schedule your meetings
+          </h1>
+
+          <p style={{ fontSize: 17, color: "#6b7280", lineHeight: 1.65, marginBottom: 36, maxWidth: 520 }}>
+            A fully customizable scheduling software for individuals, businesses taking calls and developers building scheduling platforms where users meet users.
+          </p>
+
+
+          {/* Ratings */}
+          <div style={{ display: "flex", gap: 32, marginTop: 40, alignItems: "center" }}>
+            {[
+              { color: "#00b67a", label: "Trustpilot", icon: "T", half: true },
+              { color: "#f59e0b", label: "Product Hunt", icon: "P", iconBg: "#da552f", half: false },
+              { color: "#ff492c", label: "G2", icon: "G", iconBg: "#ff492c", half: true, missing: 1 },
+            ].map(({ color, label, icon, iconBg, half, missing }) => (
+              <div key={label} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <div style={{ display: "flex", gap: 2 }}>
+                  {[1, 2, 3, 4, 5].map((i) => {
+                    const isMissing = missing && i === 5;
+                    const isHalf = half && i === 5 && !isMissing;
+                    return (
+                      <svg key={i} width="14" height="14" viewBox="0 0 24 24" fill={isMissing ? "#e5e7eb" : color}>
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </svg>
+                    );
+                  })}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  {iconBg ? (
+                    <div style={{ width: 14, height: 14, borderRadius: "50%", backgroundColor: iconBg, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <span style={{ fontSize: 8, color: "#fff", fontWeight: 700 }}>{icon}</span>
+                    </div>
+                  ) : (
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                  )}
+                  <span style={{ fontSize: 11, color: "#6b7280" }}>{label}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right: Booking card */}
+        <div style={{
+          backgroundColor: "#fff",
+          borderRadius: 16,
+          border: "1px solid #e5e7eb",
+          boxShadow: "0 4px 24px rgba(0,0,0,0.07)",
+          overflow: "hidden",
+          display: "grid",
+          gridTemplateColumns: "260px 1px 1fr",
+        }}>
+          {/* Event info */}
+          <div style={{ padding: "28px 24px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+              <div style={{ width: 30, height: 30, borderRadius: "50%", backgroundColor: "#d1d5db", flexShrink: 0 }} />
+              <span style={{ fontSize: 12, color: "#6b7280" }}>Cédric van Ravesteijn</span>
             </div>
-            <h1 className="neo-hero-title">
-              Stop emailing. Share a link. Get booked.
-            </h1>
-            <p className="neo-hero-sub">
-              Choose who you want to meet, pick an event type, and confirm a
-              time in seconds. Availability, timezones, and double bookings are
-              handled automatically behind the scenes.
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#111827", marginBottom: 10, lineHeight: 1.3 }}>
+              Partnerships Meeting
+            </h2>
+            <p style={{ fontSize: 12.5, color: "#6b7280", lineHeight: 1.6, marginBottom: 22 }}>
+              Are you an agency, influencer, SaaS founder, or business looking to collaborate with Cal.com? Let&apos;s chat!
             </p>
 
-            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-              <Link href="/people" className="neo-button">
-                Get started
-              </Link>
-              {/* <span style={{ fontSize: 12, fontWeight: 600 }}>
-                No login · book in under a minute
-              </span> */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                <div style={{ display: "flex", gap: 4 }}>
+                  {durations.map((dur) => (
+                    <button key={dur} type="button" onClick={() => setSelectedDuration(dur)} style={{
+                      padding: "3px 8px", borderRadius: 6, border: "1px solid #e5e7eb",
+                      background: selectedDuration === dur ? "#f3f4f6" : "#fff",
+                      fontSize: 11, fontWeight: selectedDuration === dur ? 600 : 400,
+                      cursor: "pointer", color: selectedDuration === dur ? "#111827" : "#9ca3af",
+                    }}>
+                      {dur}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2"><rect x="2" y="7" width="20" height="15" rx="2" /><polyline points="17 2 12 7 7 2" /></svg>
+                <span style={{ fontSize: 12.5, color: "#374151" }}>Cal Video</span>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
+                <span style={{ fontSize: 12.5, color: "#374151" }}>Europe/Amsterdam</span>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>
+              </div>
             </div>
           </div>
 
-          <div className="neo-hero-visual">
-            <Image
-              src="/poster.png"
-              alt="Two people scheduling meetings across the world"
-              fill
-              style={{ objectFit: "contain" }}
-              priority
-            />
-            {/* <div className="neo-hero-chip">Available worldwide</div> */}
-          </div>
-        </section>
-      </main>
+          {/* Divider */}
+          <div style={{ backgroundColor: "#e5e7eb" }} />
 
-      <main className="neo-main" style={{ paddingTop: 0 }}>
-        <section
-          className="neo-content-card"
-          style={{ gridColumn: "1 / span 2", background: "#fffdf5" }}
-        >
-          <div>
-            <div className="neo-section-subtitle">What this app does</div>
-            <h2 className="neo-section-title">Everything you need to get booked</h2>
-
-            <div className="neo-feature-row">
-              <div className="neo-feature-card">
-                <div className="neo-feature-icon">ET</div>
-                <div className="neo-feature-title">Event types you control</div>
-                <p className="neo-feature-copy">
-                  Design different kinds of meetings with their own title,
-                  description, duration, and clean URL slug – all managed from a
-                  single dashboard.
-                </p>
+          {/* Calendar */}
+          <div style={{ padding: "28px 20px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>
+                May <span style={{ color: "#6b7280", fontWeight: 400 }}>2025</span>
               </div>
-              <div className="neo-feature-card">
-                <div className="neo-feature-icon">⏰</div>
-                <div className="neo-feature-title">Smart availability</div>
-                <p className="neo-feature-copy">
-                  Tell the system which days you take calls and the exact
-                  working hours in your timezone, and it does the math for
-                  every visitor.
-                </p>
-              </div>
-              <div className="neo-feature-card">
-                <div className="neo-feature-icon">🌐</div>
-                <div className="neo-feature-title">Public booking page</div>
-                <p className="neo-feature-copy">
-                  Share a single link where guests choose a date, see free
-                  slots, drop in their name and email, and book without any
-                  double‑booking surprises.
-                </p>
-              </div>
-              <div className="neo-feature-card">
-                <div className="neo-feature-icon">📅</div>
-                <div className="neo-feature-title">Bookings at a glance</div>
-                <p className="neo-feature-copy">
-                  Behind the scenes, a simple dashboard shows upcoming and past
-                  meetings and lets the owner cancel slots when plans change.
-                </p>
+              <div style={{ display: "flex", gap: 4 }}>
+                {["left", "right"].map((dir) => (
+                  <button key={dir} type="button" style={{
+                    width: 26, height: 26, borderRadius: 6, border: "1px solid #e5e7eb",
+                    background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2">
+                      {dir === "left" ? <polyline points="15 18 9 12 15 6" /> : <polyline points="9 18 15 12 9 6" />}
+                    </svg>
+                  </button>
+                ))}
               </div>
             </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", marginBottom: 4 }}>
+              {days.map((d) => (
+                <div key={d} style={{ textAlign: "center", fontSize: 9.5, fontWeight: 600, color: "#9ca3af", letterSpacing: "0.04em", padding: "2px 0" }}>{d}</div>
+              ))}
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 3 }}>
+              {Array.from({ length: startDayOffset }).map((_, i) => <div key={`e-${i}`} />)}
+              {Array.from({ length: totalDays }).map((_, i) => {
+                const day = i + 1;
+                const isAvailable = availableDates.includes(day);
+                const isSelected = day === selectedDate;
+                const isAnimating = day === highlightedDate && !selectedDate;
+
+                return (
+                  <button
+                    type="button"
+                    key={day}
+                    disabled={!isAvailable}
+                    onClick={() => isAvailable && setSelectedDate(isSelected ? null : day)}
+                    style={{
+                      height: 34,
+                      borderRadius: 8,
+                      border: isSelected ? "2px solid #111827" : isAvailable ? "1px solid #e5e7eb" : "1px solid transparent",
+                      backgroundColor: isSelected ? "#111827" : isAnimating ? "#e5e7eb" : isAvailable ? "#f9fafb" : "transparent",
+                      color: isSelected ? "#fff" : isAvailable ? "#111827" : "#d1d5db",
+                      fontSize: 13,
+                      fontWeight: isAvailable ? 500 : 400,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: isAvailable ? "pointer" : "default",
+                      transition: "background-color 0.5s ease, border-color 0.4s ease, color 0.3s ease",
+                      position: "relative",
+                    }}
+                  >
+                    {day}
+                    {day === 15 && (
+                      <span style={{
+                        position: "absolute", bottom: 3, left: "50%",
+                        transform: "translateX(-50%)",
+                        width: 3, height: 3, borderRadius: "50%",
+                        backgroundColor: isSelected ? "#fff" : "#111827",
+                      }} />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </section>
-      </main>
+        </div>
+      </div>
     </div>
   );
 }
