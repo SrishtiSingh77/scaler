@@ -9,7 +9,7 @@ export async function getPublicEventBySlug(slug: string) {
       schedules: {
         include: {
           schedule: {
-            include: { rules: true },
+            include: { rules: true, overrides: true },
           },
         },
       },
@@ -30,10 +30,10 @@ export async function getPublicEventBySlug(slug: string) {
     slug: eventType.slug,
     schedule: primarySchedule
       ? {
-          id: primarySchedule.id,
-          name: primarySchedule.name,
-          timezone: primarySchedule.timezone,
-        }
+        id: primarySchedule.id,
+        name: primarySchedule.name,
+        timezone: primarySchedule.timezone,
+      }
       : null,
   };
 }
@@ -48,7 +48,7 @@ export async function getAvailableSlotsForDate(
       schedules: {
         include: {
           schedule: {
-            include: { rules: true },
+            include: { rules: true, overrides: true },
           },
         },
       },
@@ -65,6 +65,8 @@ export async function getAvailableSlotsForDate(
   }
 
   const { timezone } = schedule;
+  const bufferBefore = eventType.bufferBeforeMinutes ?? 0;
+  const bufferAfter = eventType.bufferAfterMinutes ?? 0;
   const date = DateTime.fromISO(query.date, { zone: timezone });
   if (!date.isValid) {
     throw new Error("Invalid date");
@@ -75,17 +77,31 @@ export async function getAvailableSlotsForDate(
 
   const dayOfWeek = startOfDay.weekday % 7; // luxon: 1 (Mon) - 7 (Sun), our schema: 0-6
 
-  const rulesForDay = schedule.rules.filter((rule) => rule.dayOfWeek === dayOfWeek);
+  const rulesForDay = schedule.rules.filter(
+    (rule) => rule.dayOfWeek === dayOfWeek,
+  );
   if (rulesForDay.length === 0) {
+    return { slots: [] };
+  }
+
+  // Date override: stored as UTC midnight date
+  const overrideDate = startOfDay.toUTC().startOf("day").toJSDate();
+  const override = schedule.overrides.find(
+    (o) => o.date.getTime() === overrideDate.getTime(),
+  );
+
+  if (override?.isBlocked) {
     return { slots: [] };
   }
 
   const existingBookings = await prisma.booking.findMany({
     where: {
-      eventTypeId: eventType.id,
       scheduleId: schedule.id,
       status: { in: ["PENDING", "CONFIRMED"] },
       startTime: { gte: startOfDay.toJSDate(), lt: endOfDay.toJSDate() },
+    },
+    include: {
+      eventType: true,
     },
   });
 
@@ -93,23 +109,70 @@ export async function getAvailableSlotsForDate(
   const slots: string[] = [];
 
   for (const rule of rulesForDay) {
-    let slotStart = startOfDay.plus({ minutes: rule.startTimeMinutes });
-    const ruleEnd = startOfDay.plus({ minutes: rule.endTimeMinutes });
+    const windowStartMinutes = override?.startTimeMinutes ?? 0;
+    const windowEndMinutes = override?.endTimeMinutes ?? 24 * 60;
+
+    const effectiveStartMinutes = Math.max(
+      rule.startTimeMinutes,
+      windowStartMinutes,
+    );
+    const effectiveEndMinutes = Math.min(
+      rule.endTimeMinutes,
+      windowEndMinutes,
+    );
+
+    if (effectiveEndMinutes <= effectiveStartMinutes) {
+      // Rule fully outside override window
+      // eslint-disable-next-line no-continue
+      continue;
+    }
+
+    const stepMinutes = duration + bufferBefore + bufferAfter;
+
+    let slotStart = startOfDay.plus({ minutes: effectiveStartMinutes });
+    const ruleEnd = startOfDay.plus({ minutes: effectiveEndMinutes });
 
     while (slotStart.plus({ minutes: duration }) <= ruleEnd) {
       const slotEnd = slotStart.plus({ minutes: duration });
 
       const hasOverlap = existingBookings.some((booking) => {
-        const bookingStart = DateTime.fromJSDate(booking.startTime);
-        const bookingEnd = DateTime.fromJSDate(booking.endTime);
-        return bookingStart < slotEnd && bookingEnd > slotStart;
+        const bookingStart = DateTime.fromJSDate(booking.startTime).setZone(
+          timezone,
+        );
+        const bookingEnd = DateTime.fromJSDate(booking.endTime).setZone(
+          timezone,
+        );
+
+        const bookingBufferBefore =
+          booking.eventType.bufferBeforeMinutes ?? 0;
+        const bookingBufferAfter =
+          booking.eventType.bufferAfterMinutes ?? 0;
+
+        const blockStart = bookingStart.minus({
+          minutes: bookingBufferBefore,
+        });
+        const blockEnd = bookingEnd.plus({
+          minutes: bookingBufferAfter,
+        });
+
+        const requestedBlockStart = slotStart.minus({
+          minutes: bufferBefore,
+        });
+        const requestedBlockEnd = slotEnd.plus({
+          minutes: bufferAfter,
+        });
+
+        return (
+          requestedBlockStart < blockEnd && requestedBlockEnd > blockStart
+        );
       });
 
       if (!hasOverlap) {
         slots.push(slotStart.toUTC().toISO());
       }
 
-      slotStart = slotStart.plus({ minutes: duration });
+      // Move to the next potential slot respecting buffers
+      slotStart = slotStart.plus({ minutes: stepMinutes });
     }
   }
 
@@ -149,18 +212,42 @@ export async function createPublicBooking(
 
   const endTime = startTime.plus({ minutes: eventType.durationMinutes });
 
+  const bufferBefore = eventType.bufferBeforeMinutes ?? 0;
+  const bufferAfter = eventType.bufferAfterMinutes ?? 0;
+
+  const requestedBlockStart = startTime.minus({ minutes: bufferBefore });
+  const requestedBlockEnd = endTime.plus({ minutes: bufferAfter });
+
   return prisma.$transaction(async (tx) => {
-    const overlapping = await tx.booking.count({
+    const nearbyBookings = await tx.booking.findMany({
       where: {
-        eventTypeId: eventType.id,
         scheduleId: schedule.id,
         status: { in: ["PENDING", "CONFIRMED"] },
-        startTime: { lt: endTime.toJSDate() },
-        endTime: { gt: startTime.toJSDate() },
+        startTime: { lt: requestedBlockEnd.toJSDate() },
+        endTime: { gt: requestedBlockStart.toJSDate() },
+      },
+      include: {
+        eventType: true,
       },
     });
 
-    if (overlapping > 0) {
+    const hasOverlap = nearbyBookings.some((b) => {
+      const bookingStart = DateTime.fromJSDate(b.startTime).setZone("utc");
+      const bookingEnd = DateTime.fromJSDate(b.endTime).setZone("utc");
+      const bookingBufferBefore = b.eventType.bufferBeforeMinutes ?? 0;
+      const bookingBufferAfter = b.eventType.bufferAfterMinutes ?? 0;
+
+      const blockStart = bookingStart.minus({
+        minutes: bookingBufferBefore,
+      });
+      const blockEnd = bookingEnd.plus({
+        minutes: bookingBufferAfter,
+      });
+
+      return requestedBlockStart < blockEnd && requestedBlockEnd > blockStart;
+    });
+
+    if (hasOverlap) {
       throw new Error("Time slot is no longer available");
     }
 
@@ -178,4 +265,3 @@ export async function createPublicBooking(
     return booking;
   });
 }
-

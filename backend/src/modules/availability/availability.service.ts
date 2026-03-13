@@ -29,7 +29,7 @@ export async function listSchedules() {
   const ownerId = await getDefaultOwnerId();
   return prisma.availabilitySchedule.findMany({
     where: { ownerId },
-    include: { rules: true },
+    include: { rules: true, overrides: true },
     orderBy: { createdAt: "asc" },
   });
 }
@@ -38,7 +38,7 @@ export async function getScheduleById(id: string) {
   const ownerId = await getDefaultOwnerId();
   return prisma.availabilitySchedule.findFirst({
     where: { id, ownerId },
-    include: { rules: true },
+    include: { rules: true, overrides: true },
   });
 }
 
@@ -62,6 +62,18 @@ export async function createSchedule(data: CreateScheduleInput) {
         endTimeMinutes: rule.endTimeMinutes,
       })),
     });
+
+    if (data.overrides && data.overrides.length > 0) {
+      await tx.dateOverride.createMany({
+        data: data.overrides.map((o) => ({
+          scheduleId: schedule.id,
+          date: new Date(o.date),
+          isBlocked: o.isBlocked,
+          startTimeMinutes: o.startTimeMinutes ?? null,
+          endTimeMinutes: o.endTimeMinutes ?? null,
+        })),
+      });
+    }
 
     return schedule;
   });
@@ -102,6 +114,24 @@ export async function updateSchedule(id: string, data: UpdateScheduleInput) {
       });
     }
 
+    if (data.overrides) {
+      await tx.dateOverride.deleteMany({
+        where: { scheduleId: existing.id },
+      });
+
+      if (data.overrides.length > 0) {
+        await tx.dateOverride.createMany({
+          data: data.overrides.map((o) => ({
+            scheduleId: existing.id,
+            date: new Date(o.date),
+            isBlocked: o.isBlocked,
+            startTimeMinutes: o.startTimeMinutes ?? null,
+            endTimeMinutes: o.endTimeMinutes ?? null,
+          })),
+        });
+      }
+    }
+
     return updated;
   });
 }
@@ -121,4 +151,3 @@ export async function deleteSchedule(id: string) {
     where: { id, ownerId },
   });
 }
-
