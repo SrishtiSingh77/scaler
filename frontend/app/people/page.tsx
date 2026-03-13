@@ -1,100 +1,9 @@
-// "use client";
-
-// import Link from "next/link";
-// import { useEffect, useState } from "react";
-// import { apiGet } from "../api-client";
-
-// type EventType = {
-//   id: string;
-//   title: string;
-//   description: string;
-//   durationMinutes: number;
-//   slug: string;
-// };
-
-// export default function PeoplePage() {
-//   const [events, setEvents] = useState<EventType[]>([]);
-//   const [loading, setLoading] = useState(false);
-//   const [error, setError] = useState<string | null>(null);
-
-//   useEffect(() => {
-//     async function load() {
-//       setLoading(true);
-//       setError(null);
-//       try {
-//         const data = await apiGet<EventType[]>("/api/event-types/people");
-//         setEvents(data);
-//       } catch (e) {
-//         setError(
-//           e instanceof Error ? e.message : "Failed to load event types",
-//         );
-//       } finally {
-//         setLoading(false);
-//       }
-//     }
-//     load();
-//   }, []);
-
-//   return (
-//     <div className="neo-shell">
-//       <main className="neo-main">
-//         <section
-//           className="neo-content-card"
-//           style={{ gridColumn: "1 / span 2", background: "#fffdf5" }}
-//         >
-//           <h1 className="neo-section-title">Choose your host</h1>
-//           <p className="neo-hero-sub">
-//             Start by picking the event you want to book. Each one represents a
-//             specific person and meeting type.
-//           </p>
-
-//           <div style={{ marginTop: 8, marginBottom: 8 }}>
-//             <Link href="/people/new" className="neo-button">
-//               + Add new person
-//             </Link>
-//           </div>
-
-//           {loading && <p>Loading people…</p>}
-//           {error && <div className="neo-error">{error}</div>}
-
-//           <div
-//             style={{
-//               display: "grid",
-//               gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-//               gap: 16,
-//               marginTop: 16,
-//             }}
-//           >
-//             {events.map((ev) => (
-//               <div key={ev.id} className="neo-person-card">
-//                 <div className="neo-person-name">{ev.title}</div>
-//                 <div className="neo-person-role">
-//                   {ev.durationMinutes} minute meeting
-//                 </div>
-//                 <p className="neo-person-highlight">{ev.description}</p>
-//                 <Link href={`/book/${ev.slug}`} className="neo-button">
-//                   Book {ev.durationMinutes} min
-//                 </Link>
-//               </div>
-//             ))}
-//             {!loading && events.length === 0 && (
-//               <p style={{ fontWeight: 600 }}>
-//                 No event types created yet. Create one in the dashboard.
-//               </p>
-//             )}
-//           </div>
-//         </section>
-//       </main>
-//     </div>
-//   );
-// }
-
 
 "use client";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { apiGet } from "../api-client";
+import { apiGet, apiPost } from "../api-client";
 
 type EventType = {
   id: string;
@@ -104,26 +13,26 @@ type EventType = {
   slug: string;
 };
 
-const AVATAR_COLORS = [
-  "#4f46e5", "#0891b2", "#059669", "#d97706",
-  "#dc2626", "#7c3aed", "#db2777", "#0284c7",
-];
+type Schedule = {
+  id: string;
+  name: string;
+  timezone: string;
+};
 
-function Avatar({ name, index }: { name: string; index: number }) {
+function Avatar({ name }: { name: string }) {
   const initials = name
     .split(" ")
     .map((w) => w[0])
     .join("")
     .slice(0, 2)
     .toUpperCase();
-  const color = AVATAR_COLORS[index % AVATAR_COLORS.length];
   return (
     <div
       style={{
         width: 48,
         height: 48,
         borderRadius: "50%",
-        backgroundColor: color,
+        backgroundColor: "#111827",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -143,6 +52,19 @@ export default function PeoplePage() {
   const [events, setEvents] = useState<EventType[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
+
+  const [showModal, setShowModal] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [form, setForm] = useState({
+    name: "",
+    role: "",
+    durationMinutes: 30,
+    bufferBeforeMinutes: 0,
+    bufferAfterMinutes: 0,
+    slug: "",
+    scheduleId: "",
+  });
 
   useEffect(() => {
     async function load() {
@@ -160,11 +82,65 @@ export default function PeoplePage() {
     load();
   }, []);
 
+  useEffect(() => {
+    async function loadSchedules() {
+      try {
+        const data = await apiGet<Schedule[]>("/api/availability/schedules");
+        setSchedules(data);
+        if (data.length > 0) {
+          setForm((prev) => ({ ...prev, scheduleId: data[0].id }));
+        }
+      } catch {
+        // ignore schedule errors here; form will still render
+      }
+    }
+    loadSchedules();
+  }, []);
+
+  const canSubmit =
+    !!form.name.trim() &&
+    !!form.role.trim() &&
+    !!form.slug.trim() &&
+    !!form.scheduleId.trim();
+
+  async function handleCreatePerson(e: React.FormEvent) {
+    e.preventDefault();
+    if (!canSubmit) return;
+    setCreating(true);
+    try {
+      await apiPost("/api/event-types", {
+        title: form.name,
+        description: form.role,
+        durationMinutes: form.durationMinutes,
+        bufferBeforeMinutes: form.bufferBeforeMinutes,
+        bufferAfterMinutes: form.bufferAfterMinutes,
+        slug: form.slug,
+        scheduleId: form.scheduleId,
+        isPerson: true,
+      });
+      // reset a bit and close
+      setForm((prev) => ({
+        ...prev,
+        name: "",
+        role: "",
+        slug: "",
+      }));
+      setShowModal(false);
+      // refresh list
+      const data = await apiGet<EventType[]>("/api/event-types/people");
+      setEvents(data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to create person event");
+    } finally {
+      setCreating(false);
+    }
+  }
+
   return (
     <div
       style={{
         minHeight: "100vh",
-        backgroundColor: "#f8f9fa",
+        backgroundColor: "white",
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
     >
@@ -172,7 +148,6 @@ export default function PeoplePage() {
       <div
         style={{
           backgroundColor: "#fff",
-          borderBottom: "1px solid #e5e7eb",
           padding: "24px 32px",
           display: "flex",
           alignItems: "flex-start",
@@ -188,19 +163,21 @@ export default function PeoplePage() {
           </p>
         </div>
 
-        <Link
-          href="/people/new"
+        <button
+          type="button"
+          onClick={() => setShowModal(true)}
           style={{
             display: "inline-flex",
             alignItems: "center",
             gap: 6,
             backgroundColor: "#111827",
             color: "#fff",
-            textDecoration: "none",
+            border: "none",
             borderRadius: 6,
             padding: "8px 16px",
             fontSize: 13.5,
             fontWeight: 600,
+            cursor: "pointer",
           }}
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5">
@@ -208,7 +185,7 @@ export default function PeoplePage() {
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
           Add person
-        </Link>
+        </button>
       </div>
 
       {/* Content */}
@@ -221,7 +198,7 @@ export default function PeoplePage() {
                 style={{
                   flex: "0 0 calc(25% - 12px)",
                   height: 180,
-                  backgroundColor: "#e5e7eb",
+                  backgroundColor: "white",
                   borderRadius: 6,
                   animation: "pulse 1.5s ease-in-out infinite",
                 }}
@@ -272,31 +249,37 @@ export default function PeoplePage() {
             gap: 16,
           }}
         >
-          {events.map((ev, index) => (
+          {events.map((ev) => (
             <div
               key={ev.id}
               style={{
-                backgroundColor: "#fff",
-                border: "1px solid #e5e7eb",
-                borderRadius: 6,
-                padding: "20px",
+                backgroundColor: "#ffffff",
+                borderRadius: 10,
+                padding: "18px 18px 16px",
                 display: "flex",
                 flexDirection: "column",
                 gap: 0,
-                transition: "box-shadow 0.15s ease, border-color 0.15s ease",
+                boxShadow: "0 3px 10px rgba(15,23,42,0.04)",
+                border: "3px solid #e5e7eb",
+                transition:
+                  "box-shadow 0.18s ease, transform 0.18s ease, border-color 0.18s ease",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.08)";
-                e.currentTarget.style.borderColor = "#d1d5db";
+                e.currentTarget.style.boxShadow =
+                  "0 10px 24px rgba(15,23,42,0.12)";
+                e.currentTarget.style.transform = "translateY(-3px)";
+                e.currentTarget.style.borderColor = "#cbd5f5";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = "none";
+                e.currentTarget.style.boxShadow =
+                  "0 3px 10px rgba(15,23,42,0.04)";
+                e.currentTarget.style.transform = "translateY(0)";
                 e.currentTarget.style.borderColor = "#e5e7eb";
               }}
             >
               {/* Avatar + name */}
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-                <Avatar name={ev.title} index={index} />
+                <Avatar name={ev.title} />
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 600, color: "#111827", lineHeight: 1.3 }}>
                     {ev.title}
@@ -371,6 +354,294 @@ export default function PeoplePage() {
           ))}
         </div>
       </div>
+
+      {showModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(0,0,0,0.4)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 50,
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !creating) {
+              setShowModal(false);
+            }
+          }}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 720,
+              backgroundColor: "#ffffff",
+              borderRadius: 12,
+              boxShadow: "0 18px 45px rgba(0,0,0,0.18)",
+              padding: "20px 22px 18px",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                justifyContent: "space-between",
+                marginBottom: 10,
+              }}
+            >
+              <div>
+                <h2
+                  style={{
+                    fontSize: 16,
+                    fontWeight: 600,
+                    color: "#111827",
+                    marginBottom: 2,
+                  }}
+                >
+                  Add a new person
+                </h2>
+                <p style={{ fontSize: 12.5, color: "#6b7280" }}>
+                  Create a personal booking template with duration, buffers, and schedule.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => !creating && setShowModal(false)}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  cursor: creating ? "default" : "pointer",
+                  padding: 4,
+                  color: "#9ca3af",
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleCreatePerson} style={{ fontSize: 13 }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1.1fr 1.1fr",
+                  gap: 18,
+                  marginTop: 6,
+                  marginBottom: 14,
+                }}
+              >
+                {/* Left column */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div className="neo-field">
+                    <label className="neo-label" htmlFor="modal-name">
+                      Person name
+                    </label>
+                    <input
+                      id="modal-name"
+                      className="neo-input"
+                      value={form.name}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, name: e.target.value }))
+                      }
+                      placeholder="e.g. Srishti Singh"
+                    />
+                  </div>
+                  <div className="neo-field">
+                    <label className="neo-label" htmlFor="modal-role">
+                      Short description / role
+                    </label>
+                    <input
+                      id="modal-role"
+                      className="neo-input"
+                      value={form.role}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, role: e.target.value }))
+                      }
+                      placeholder="e.g. Product Designer, SDR, Founder"
+                    />
+                  </div>
+                  <div className="neo-field">
+                    <label className="neo-label" htmlFor="modal-slug">
+                      URL slug (unique)
+                    </label>
+                    <input
+                      id="modal-slug"
+                      className="neo-input"
+                      value={form.slug}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, slug: e.target.value }))
+                      }
+                      placeholder="e.g. srishti-intro-call"
+                    />
+                    <p style={{ marginTop: 4, fontSize: 11, color: "#6b7280" }}>
+                      Booking link will be{" "}
+                      <code style={{ background: "#f3f4f6", padding: "0 4px" }}>
+                        /book/{form.slug || "your-slug"}
+                      </code>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Right column */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(3, minmax(0,1fr))",
+                      gap: 10,
+                    }}
+                  >
+                    <div className="neo-field">
+                      <label className="neo-label" htmlFor="modal-duration">
+                        Duration (min)
+                      </label>
+                      <input
+                        id="modal-duration"
+                        type="number"
+                        min={5}
+                        className="neo-input"
+                        value={form.durationMinutes}
+                        onChange={(e) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            durationMinutes: Number(e.target.value),
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="neo-field">
+                      <label className="neo-label" htmlFor="modal-buffer-before">
+                        Buffer before
+                      </label>
+                      <input
+                        id="modal-buffer-before"
+                        type="number"
+                        min={0}
+                        className="neo-input"
+                        value={form.bufferBeforeMinutes}
+                        onChange={(e) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            bufferBeforeMinutes: Number(e.target.value),
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="neo-field">
+                      <label className="neo-label" htmlFor="modal-buffer-after">
+                        Buffer after
+                      </label>
+                      <input
+                        id="modal-buffer-after"
+                        type="number"
+                        min={0}
+                        className="neo-input"
+                        value={form.bufferAfterMinutes}
+                        onChange={(e) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            bufferAfterMinutes: Number(e.target.value),
+                          }))
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div className="neo-field">
+                    <label className="neo-label" htmlFor="modal-schedule">
+                      Availability schedule
+                    </label>
+                    <select
+                      id="modal-schedule"
+                      className="neo-input"
+                      value={form.scheduleId}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, scheduleId: e.target.value }))
+                      }
+                    >
+                      <option value="">Select schedule…</option>
+                      {schedules.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name} ({s.timezone})
+                        </option>
+                      ))}
+                    </select>
+                    <p style={{ marginTop: 4, fontSize: 11, color: "#6b7280" }}>
+                      Manage schedules under{" "}
+                      <span style={{ fontWeight: 600 }}>Dashboard → Availability</span>.
+                    </p>
+                  </div>
+
+                  <div
+                    style={{
+                      borderRadius: 8,
+                      border: "1px solid #e5e7eb",
+                      backgroundColor: "#f9fafb",
+                      padding: "8px 10px",
+                      fontSize: 11,
+                      color: "#4b5563",
+                    }}
+                  >
+                    <span style={{ fontWeight: 600, color: "#111827" }}>
+                      Session block:
+                    </span>{" "}
+                    {form.durationMinutes +
+                      form.bufferBeforeMinutes +
+                      form.bufferAfterMinutes}{" "}
+                    minutes (duration + buffers)
+                  </div>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: 8,
+                  marginTop: 4,
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => !creating && setShowModal(false)}
+                  style={{
+                    borderRadius: 999,
+                    border: "1px solid #e5e7eb",
+                    background: "#ffffff",
+                    padding: "7px 14px",
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: "#4b5563",
+                    cursor: creating ? "default" : "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={creating || !canSubmit}
+                  style={{
+                    borderRadius: 999,
+                    border: "none",
+                    padding: "7px 16px",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    backgroundColor:
+                      creating || !canSubmit ? "#9ca3af" : "#111827",
+                    color: "#ffffff",
+                    cursor: creating || !canSubmit ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {creating ? "Creating…" : "Create person"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes pulse {

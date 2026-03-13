@@ -19,6 +19,8 @@ export default function NewPersonPage() {
     name: "",
     role: "",
     durationMinutes: 30,
+    bufferBeforeMinutes: 0,
+    bufferAfterMinutes: 0,
     slug: "",
     scheduleId: "",
   });
@@ -47,6 +49,8 @@ export default function NewPersonPage() {
         title: form.name,
         description: form.role,
         durationMinutes: form.durationMinutes,
+        bufferBeforeMinutes: form.bufferBeforeMinutes,
+        bufferAfterMinutes: form.bufferAfterMinutes,
         slug: form.slug,
         scheduleId: form.scheduleId,
         isPerson: true,
@@ -73,102 +77,172 @@ export default function NewPersonPage() {
       <main className="neo-main">
         <section
           className="neo-content-card"
-          style={{ gridColumn: "1 / span 2", background: "#fffdf5" }}
+          style={{
+            gridColumn: "1 / span 2",
+            background: "#ffffff",
+          }}
         >
           <h1 className="neo-section-title">Add a new person</h1>
           <p className="neo-hero-sub">
-            This creates an underlying event type in the database that will show
-            up on the People and Events pages with its own public booking link.
+            Create a personal booking template with its own link, duration, buffers,
+            and availability schedule.
           </p>
 
-          <form onSubmit={handleSubmit}>
-            <div className="neo-field">
-              <label className="neo-label" htmlFor="name">
-                Person name
-              </label>
-              <input
-                id="name"
-                className="neo-input"
-                value={form.name}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, name: e.target.value }))
-                }
-              />
-            </div>
-            <div className="neo-field">
-              <label className="neo-label" htmlFor="role">
-                Short description / role
-              </label>
-              <input
-                id="role"
-                className="neo-input"
-                value={form.role}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, role: e.target.value }))
-                }
-              />
-            </div>
-            <div className="neo-field">
-              <label className="neo-label" htmlFor="duration">
-                Duration (minutes)
-              </label>
-              <input
-                id="duration"
-                type="number"
-                min={5}
-                className="neo-input"
-                value={form.durationMinutes}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    durationMinutes: Number(e.target.value),
-                  }))
-                }
-              />
-            </div>
-            <div className="neo-field">
-              <label className="neo-label" htmlFor="slug">
-                URL slug (unique)
-              </label>
-              <input
-                id="slug"
-                className="neo-input"
-                value={form.slug}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, slug: e.target.value }))
-                }
-              />
-            </div>
-            <div className="neo-field">
-              <label className="neo-label" htmlFor="schedule">
-                Availability schedule
-              </label>
-              <select
-                id="schedule"
-                className="neo-input"
-                value={form.scheduleId}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, scheduleId: e.target.value }))
-                }
-              >
-                <option value="">Select schedule…</option>
-                {schedules.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} ({s.timezone})
-                  </option>
-                ))}
-              </select>
+          <form onSubmit={handleSubmit} className="mt-4 space-y-5 text-sm">
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* Left column: identity */}
+              <div className="space-y-3">
+                <div className="neo-field">
+                  <label className="neo-label" htmlFor="name">
+                    Person name
+                  </label>
+                  <input
+                    id="name"
+                    className="neo-input"
+                    value={form.name}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, name: e.target.value }))
+                    }
+                    placeholder="e.g. Srishti Singh"
+                  />
+                </div>
+                <div className="neo-field">
+                  <label className="neo-label" htmlFor="role">
+                    Short description / role
+                  </label>
+                  <input
+                    id="role"
+                    className="neo-input"
+                    value={form.role}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, role: e.target.value }))
+                    }
+                    placeholder="e.g. Product Designer, SDR, Founder"
+                  />
+                </div>
+                <div className="neo-field">
+                  <label className="neo-label" htmlFor="slug">
+                    URL slug (unique)
+                  </label>
+                  <input
+                    id="slug"
+                    className="neo-input"
+                    value={form.slug}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, slug: e.target.value }))
+                    }
+                    placeholder="e.g. srishti-intro-call"
+                  />
+                  <p className="mt-1 text-[11px] text-gray-500">
+                    Booking link will be <code className="bg-gray-100 px-1">/book/{form.slug || "your-slug"}</code>
+                  </p>
+                </div>
+              </div>
+
+              {/* Right column: timing + schedule */}
+              <div className="space-y-3">
+                <div className="grid gap-3 md:grid-cols-3">
+                  <div className="neo-field">
+                    <label className="neo-label" htmlFor="duration">
+                      Duration (min)
+                    </label>
+                    <input
+                      id="duration"
+                      type="number"
+                      min={5}
+                      className="neo-input"
+                      value={form.durationMinutes}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          durationMinutes: Number(e.target.value),
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="neo-field">
+                    <label className="neo-label" htmlFor="buffer-before">
+                      Buffer before
+                    </label>
+                    <input
+                      id="buffer-before"
+                      type="number"
+                      min={0}
+                      className="neo-input"
+                      value={form.bufferBeforeMinutes}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          bufferBeforeMinutes: Number(e.target.value),
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="neo-field">
+                    <label className="neo-label" htmlFor="buffer-after">
+                      Buffer after
+                    </label>
+                    <input
+                      id="buffer-after"
+                      type="number"
+                      min={0}
+                      className="neo-input"
+                      value={form.bufferAfterMinutes}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          bufferAfterMinutes: Number(e.target.value),
+                        }))
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className="neo-field">
+                  <label className="neo-label" htmlFor="schedule">
+                    Availability schedule
+                  </label>
+                  <select
+                    id="schedule"
+                    className="neo-input"
+                    value={form.scheduleId}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, scheduleId: e.target.value }))
+                    }
+                  >
+                    <option value="">Select schedule…</option>
+                    {schedules.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} ({s.timezone})
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-[11px] text-gray-500">
+                    Manage schedules under <span className="font-medium">Dashboard → Availability</span>.
+                  </p>
+                </div>
+
+                <div className="rounded-md border border-gray-100 bg-gray-50 px-3 py-2 text-[11px] text-gray-600">
+                  <span className="font-semibold text-gray-800">Session block:</span>{" "}
+                  {form.durationMinutes +
+                    form.bufferBeforeMinutes +
+                    form.bufferAfterMinutes}{" "}
+                  minutes (duration + buffers)
+                </div>
+              </div>
             </div>
 
-            <button
-              type="submit"
-              className="neo-button"
-              disabled={
-                loading || !form.name || !form.role || !form.slug || !form.scheduleId
-              }
-            >
-              {loading ? "Saving…" : "Create person"}
-            </button>
+            <div className="flex justify-end pt-2">
+              <button
+                type="submit"
+                className="rounded-md bg-black px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-gray-900 disabled:cursor-not-allowed disabled:bg-gray-400"
+                disabled={
+                  loading || !form.name || !form.role || !form.slug || !form.scheduleId
+                }
+              >
+                {loading ? "Saving…" : "Create person"}
+              </button>
+            </div>
           </form>
 
           {success && <div className="neo-success">{success}</div>}
@@ -189,4 +263,3 @@ export default function NewPersonPage() {
     </div>
   );
 }
-
