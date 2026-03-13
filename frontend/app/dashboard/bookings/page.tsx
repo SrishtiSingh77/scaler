@@ -140,7 +140,7 @@ export default function BookingsPage() {
                                         {bk.status !== "CANCELLED" && (
                                             <button
                                                 type="button"
-                                                className="neo-button red"
+                                                className="px-3 py-1.5 text-xs font-medium text-red-700 border border-red-300 bg-white hover:bg-red-50 transition-colors rounded-md"
                                                 onClick={() => cancelBooking(bk.id)}
                                                 disabled={loading}
                                             >
