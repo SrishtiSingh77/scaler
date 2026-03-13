@@ -24,18 +24,20 @@ model User {
 }
 
 model EventType {
-  id              String              @id @default(uuid())
-  ownerId         String
-  owner           User                @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  title           String
-  description     String
-  durationMinutes Int
-  slug            String              @unique
-  isPerson        Boolean             @default(false)
-  schedules       EventTypeSchedule[]
-  bookings        Booking[]
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
+  id                  String              @id @default(uuid())
+  ownerId             String
+  owner               User                @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  title               String
+  description         String
+  durationMinutes     Int
+  bufferBeforeMinutes Int                 @default(0)
+  bufferAfterMinutes  Int                 @default(0)
+  slug                String              @unique
+  isPerson            Boolean             @default(false)
+  schedules           EventTypeSchedule[]
+  bookings            Booking[]
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
 }
 
 model AvailabilitySchedule {
