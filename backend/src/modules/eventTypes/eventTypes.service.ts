@@ -33,7 +33,7 @@ export async function listEventTypes() {
         },
       },
     },
-    orderBy: { createdAt: "asc" },
+    orderBy: { createdAt: "desc" },
   });
 }
 
@@ -41,7 +41,7 @@ export async function listPersonEventTypes() {
   const ownerId = await getDefaultOwnerId();
   return prisma.eventType.findMany({
     where: { ownerId, isPerson: true },
-    orderBy: { createdAt: "asc" },
+    orderBy: { createdAt: "desc" },
   });
 }
 
@@ -49,7 +49,7 @@ export async function listNonPersonEventTypes() {
   const ownerId = await getDefaultOwnerId();
   return prisma.eventType.findMany({
     where: { ownerId, isPerson: false },
-    orderBy: { createdAt: "asc" },
+    orderBy: { createdAt: "desc" },
   });
 }
 
@@ -88,6 +88,8 @@ export async function createEventType(data: CreateEventTypeInput) {
         title: data.title,
         description: data.description,
         durationMinutes: data.durationMinutes,
+        bufferBeforeMinutes: data.bufferBeforeMinutes ?? 0,
+        bufferAfterMinutes: data.bufferAfterMinutes ?? 0,
         slug: data.slug,
         isPerson: data.isPerson ?? false,
       },
@@ -122,6 +124,14 @@ export async function updateEventType(id: string, data: UpdateEventTypeInput) {
         title: data.title ?? existing.title,
         description: data.description ?? existing.description,
         durationMinutes: data.durationMinutes ?? existing.durationMinutes,
+        bufferBeforeMinutes:
+          typeof data.bufferBeforeMinutes === "number"
+            ? data.bufferBeforeMinutes
+            : existing.bufferBeforeMinutes,
+        bufferAfterMinutes:
+          typeof data.bufferAfterMinutes === "number"
+            ? data.bufferAfterMinutes
+            : existing.bufferAfterMinutes,
         slug: data.slug ?? existing.slug,
         isPerson:
           typeof data.isPerson === "boolean" ? data.isPerson : existing.isPerson,
@@ -184,4 +194,3 @@ export async function deleteEventType(id: string) {
     },
   });
 }
-
